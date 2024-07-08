@@ -1,0 +1,11 @@
+name: Percentage Match Rule
+type: percentage_match
+index: test-index
+match_bucket_filter:
+  status: "success"
+doc_type: "_doc"
+percentage_threshold: 80
+alert:
+  - email
+email:
+  - example@example.com

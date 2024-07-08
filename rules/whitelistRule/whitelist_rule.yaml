@@ -1,0 +1,16 @@
+name: Whitelist Rule
+type: whitelist
+index: test-index
+compare_key: user
+whitelist:
+  - alice
+  - bob
+  - charlie
+ignore_null: true
+filter:
+  - term:
+      status: active
+alert:
+  - email
+email:
+  - elastalert@example.com

@@ -1,0 +1,17 @@
+name: Change Rule
+type: change
+index: test-index
+compare_key:
+  - file_name
+ignore_null: true
+query_key: event_name  
+timeframe: 24h
+ts_field: "@timestamp"
+filter:
+  - range:
+      "@timestamp":
+        gte: "now-24h"
+alert:
+  - email
+email:
+  - elastalert@example.com

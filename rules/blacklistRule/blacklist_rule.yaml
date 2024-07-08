@@ -1,0 +1,16 @@
+name: Blacklist Rule
+type: blacklist
+index: test-index
+compare_key: user
+blacklist:
+  - baduser1
+  - baduser2
+  - baduser3
+ignore_null: true
+filter:
+  - term:
+      status: active
+alert:
+  - email
+email:
+  - elastalert@example.com

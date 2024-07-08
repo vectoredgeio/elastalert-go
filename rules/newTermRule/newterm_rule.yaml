@@ -1,0 +1,27 @@
+name: New Term Rule
+type: new_term
+index: test-index
+fields:
+  - field1
+  - field2
+query_key: your_query_key
+terms_window_size: 720h
+window_step_size: 24h
+alert_on_missing_field: true
+use_terms_query: false
+use_keyword_postfix: true
+alert:
+  - alert1@example.com
+  - alert2@example.com
+email:
+  - email1@example.com
+  - email2@example.com
+terms_size: 10
+terms_field: your_terms_field
+must_clauses:
+  - term:
+      field1: value1
+  - range:
+      field2:
+        gte: 10
+        lte: 100

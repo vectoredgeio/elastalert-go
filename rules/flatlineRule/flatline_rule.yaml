@@ -1,0 +1,9 @@
+name: Flatline rule
+type: flatline
+index: test-index
+threshold: 10
+timeframe: 60m
+alert:
+  - email
+email:
+  - elastalert@example.com

@@ -1,0 +1,14 @@
+name: Abnormal File Deletion Activity
+type: frequency
+index: test-index
+num_events: 5
+timeframe: 10h
+ts_field: times.recordedDateTime
+filter:
+  - term:
+      action.delete.objectType: "File"
+  - term:
+      isSensitive: true
+alert:
+  - "slack"
+slack_webhook_url: "https://hooks.slack.com/services/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"

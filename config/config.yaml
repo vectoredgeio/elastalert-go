@@ -1,0 +1,7 @@
+es_host: "opensearch.vectoredge.io"
+es_port: 9200
+run_every: "10m"
+buffer_time: "15m"
+writeback_index: "elastalert_status"
+username: "admin"
+password: "Rahul@1300"

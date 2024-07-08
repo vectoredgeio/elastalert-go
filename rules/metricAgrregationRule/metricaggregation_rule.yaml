@@ -1,0 +1,22 @@
+name: Metric Aggregation Rule
+type: metric_aggregation
+index: test-index
+metric_agg_key: "field_name"
+metric_agg_type: "avg"
+max_threshold: 100
+min_threshold: 10
+percentile_range: 95
+metric_agg_script: ""
+metric_format_string: "Value is %.2f"
+query_key: "query_key"
+compound_query_key:
+  - "field1"
+  - "field2"
+calculation_window: "1h" 
+buffer_time: "5m"        
+
+alert:
+  - email
+
+email:
+  - example@example.com

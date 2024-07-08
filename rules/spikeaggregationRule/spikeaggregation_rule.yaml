@@ -1,0 +1,10 @@
+name: Spike Aggregation Rule
+type: spike_aggregation
+index: test-index
+spike_height: 3
+spike_type: both #can be "up", "down" or "both"
+timeframe: 1h
+alert:
+  - email
+email:
+  - example@example.com

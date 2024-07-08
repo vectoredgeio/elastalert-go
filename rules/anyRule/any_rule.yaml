@@ -1,0 +1,7 @@
+name: Any Rule
+type: any
+index: test-index
+alert:
+  - email
+email:
+  - example@example.com

@@ -1,0 +1,11 @@
+name: Cardinality Rule
+type: cardinality
+index: test-index
+timeframe: 24h
+cardinality_field: field_name
+max_cardinality: 100
+query_key: query_key
+alert:
+  - email
+email:
+  - example@example.com

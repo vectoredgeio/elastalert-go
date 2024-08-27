@@ -5,19 +5,40 @@ import (
 	"fmt"
 	"strings"
 	"time"
+    
 
 	"github.com/opensearch-project/opensearch-go/opensearchapi"
+    util "elastalert-go/util"
 )
 
 type FrequencyRule struct {
-	Name          string                  `yaml:"name"`
-	Index         string                  `yaml:"index"`
-	NumEvents     int                     `yaml:"num_events"`
-	Timeframe     time.Duration           `yaml:"timeframe"`
-	TsField       string                  `yaml:"ts_field"`
-	AttachRelated bool                    `yaml:"attach_related"`
-	Occurrences   map[string]*EventWindow `yaml:"occurrences"`
+	Name                  string                  `yaml:"name"`
+	Index                 string                  `yaml:"index"`
+	NumEvents             int                     `yaml:"num_events"`
+	Timeframe             Timeframe               `yaml:"timeframe"`
+	TimestampField        string                  `yaml:"timestamp_field"`
+	AttachRelated         bool                    `yaml:"attached_related"`
+	Priority              int                     `yaml:"priority"`
+	Occurrences           map[string]*EventWindow `yaml:"occurrences"`
+	Filter        []interface{}             `yaml:"filter"`
+	Alert                 []string                `yaml:"alert"`
+	SlackWebhookURL       string                  `yaml:"slack_webhook_url"`
+	SlackChannelOverride  string                  `yaml:"slack_channel_override"`
+	SlackUsernameOverride string                  `yaml:"slack_username_override"`
 }
+
+type Timeframe struct {
+	Minutes int `yaml:"minutes"`
+	Hours   int `yaml:"hours"`
+	Days    int `yaml:"days"`
+}
+
+func (tf Timeframe) ToDuration() time.Duration {
+	return time.Duration(tf.Minutes)*time.Minute +
+		time.Duration(tf.Hours)*time.Hour +
+		time.Duration(tf.Days)*time.Hour*24
+}
+
 
 type EventWindow struct {
 	Data      []Event
@@ -31,18 +52,23 @@ type Event struct {
 	RelatedEvents []Event
 }
 
-func NewFrequencyRule(name string, index string, numEvents int, timeframe time.Duration, tsField string, attachRelated bool) *FrequencyRule {
+func NewFrequencyRule(name string, index string, numEvents int, timeframe Timeframe, timestampField string, attachRelated bool, priority int, filter []interface{}, alert []string, slackWebhookURL string, slackChannelOverride string, slackUsernameOverride string) *FrequencyRule {
 	return &FrequencyRule{
-		Name:          name,
-		Index:         index,
-		NumEvents:     numEvents,
-		Timeframe:     timeframe,
-		TsField:       tsField,
-		AttachRelated: attachRelated,
-		Occurrences:   make(map[string]*EventWindow),
+		Name:                  name,
+		Index:                 index,
+		NumEvents:             numEvents,
+		Timeframe:             timeframe,
+		TimestampField:        timestampField,
+		AttachRelated:         attachRelated,
+		Priority:              priority,
+		Occurrences:           make(map[string]*EventWindow),
+		Filter:                filter,
+		Alert:                 alert,
+		SlackWebhookURL:       slackWebhookURL,
+		SlackChannelOverride:  slackChannelOverride,
+		SlackUsernameOverride: slackUsernameOverride,
 	}
 }
-
 
 func (rule *FrequencyRule) AddCountData(data map[time.Time]int) {
 	if data == nil {
@@ -54,7 +80,7 @@ func (rule *FrequencyRule) AddCountData(data map[time.Time]int) {
 		fmt.Println("Occurrences map is nil, initializing now.")
 		rule.Occurrences = make(map[string]*EventWindow)
 	}
-    fmt.Println("data is",data)
+	fmt.Println("data is", data)
 	for ts, count := range data {
 		event := Event{
 			Timestamp: ts,
@@ -63,13 +89,14 @@ func (rule *FrequencyRule) AddCountData(data map[time.Time]int) {
 		key := "all"
 		window, ok := rule.Occurrences[key]
 		if !ok {
-			window = NewEventWindow(rule.Timeframe)
+			window = NewEventWindow(rule.Timeframe.ToDuration())
 			rule.Occurrences[key] = window
 		}
 		window.Append(event)
 		rule.Matches(key)
 	}
 }
+
 
 
 
@@ -132,49 +159,54 @@ func (ew *EventWindow) Clear() {
 	ew.Data = make([]Event, 0)
 }
 
-func (r *FrequencyRule) GetQuery() (*opensearchapi.SearchRequest, error) {
-    timeframe := fmt.Sprintf("now-%dh", int(r.Timeframe.Hours()))
+func (rule *FrequencyRule) GetQuery() (*opensearchapi.SearchRequest, error) {
+    // Initialize an empty slice for filters
+    var filters []interface{}
 
+    // Loop over each filter item from the rule's filter configuration
+    for _, f := range rule.Filter {
+        if f == nil {
+            return nil, fmt.Errorf("filter element is nil")
+        }
+
+        var queryPart map[string]interface{}
+        switch v := f.(type) {
+        case map[interface{}]interface{}:
+            // Convert to map[string]interface{}
+            queryPart = util.ConvertMapKeys(v)
+        case map[string]interface{}:
+            // Already the correct type
+            queryPart = v
+        default:
+            return nil, fmt.Errorf("unsupported filter type: %T", f)
+        }
+
+        // Validate the structure of the queryPart to ensure it matches OpenSearch's expected format
+        if _, ok := queryPart["query"]; ok {
+            filters = append(filters, queryPart["query"])
+        } else {
+            return nil, fmt.Errorf("invalid filter format: expected 'query' key, got %v", queryPart)
+        }
+    }
+
+    // Construct the dynamic query with filters
     query := map[string]interface{}{
         "query": map[string]interface{}{
             "bool": map[string]interface{}{
-                "filter": []interface{}{
-                    map[string]interface{}{
-                        "term": map[string]interface{}{
-                            "isSensitive": true,
-                        },
-                    },
-                    map[string]interface{}{
-                        "exists": map[string]interface{}{
-                            "field": "action.delete",
-                        },
-                    },
-                    map[string]interface{}{
-                        "range": map[string]interface{}{
-                            "times.recordedDateTime": map[string]interface{}{
-                                "gte": timeframe,
-                            },
-                        },
-                    },
-                },
-            },
-        },
-        "sort": []map[string]interface{}{
-            {
-                "times.recordedDateTime": map[string]interface{}{
-                    "order": "asc",
-                },
+                "filter": filters, // Use the dynamically created filters
             },
         },
     }
 
+    // Serialize the query to JSON
     queryBytes, err := json.Marshal(query)
     if err != nil {
         return &opensearchapi.SearchRequest{}, err
     }
 
+    // Create and return the OpenSearch search request
     return &opensearchapi.SearchRequest{
-        Index: []string{r.Index},
+        Index: []string{rule.Index},
         Body:  strings.NewReader(string(queryBytes)),
     }, nil
 }
@@ -182,16 +214,22 @@ func (r *FrequencyRule) GetQuery() (*opensearchapi.SearchRequest, error) {
 
 
 
-// Evaluate processes the query results.
+
+
 func (r *FrequencyRule) Evaluate(hits []map[string]interface{}) bool {
-    if hits == nil {
-        fmt.Println("No hits found in the response")
-        return false
-    }
-    fmt.Println("length of hits",len(hits))
-    return len(hits)>r.NumEvents
-   
+	if hits == nil {
+		fmt.Println("No hits found in the response")
+		return false
+	}
+	fmt.Println("length of hits", len(hits))
+	return len(hits) >= r.NumEvents
 }
+
+
+
+
+
+
 
 
 

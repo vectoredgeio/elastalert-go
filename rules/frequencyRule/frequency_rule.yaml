@@ -1,14 +1,27 @@
-name: Abnormal File Deletion Activity
+---
+name: Password-Policy-Jul-3
+
 type: frequency
-index: test-index
-num_events: 5
-timeframe: 10h
-ts_field: times.recordedDateTime
+
+index: ve-classification-1
+
+num_events: 1
+
+attached_related: true
+
+priority: 1
+timeframe:
+  minutes: 5
+
+timestamp_field: timestamp
 filter:
-  - term:
-      action.delete.objectType: "File"
-  - term:
-      isSensitive: true
+  - query:
+      match:
+        fileIdentifiers:
+          query: "Password"
 alert:
-  - "slack"
-slack_webhook_url: "https://hooks.slack.com/services/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"
+  - slack
+
+slack_webhook_url: "https://hooks.slack.com/services/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"
+slack_channel_override: "#ve-incidents"
+slack_username_override: "@ve-bot"

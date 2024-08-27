@@ -8,9 +8,10 @@ import (
 	flatlinerule "elastalert-go/rules/flatlineRule"
 	frequencyrule "elastalert-go/rules/frequencyRule"
 	metricaggregationrule "elastalert-go/rules/metricAgrregationRule"
-	spikeaggregationrule "elastalert-go/rules/spikeaggregationRule"
 	newtermrule "elastalert-go/rules/newTermRule"
 	percentagematchrule "elastalert-go/rules/percentageMatchRule"
+	spikerule "elastalert-go/rules/spikeRule"
+	spikeaggregationrule "elastalert-go/rules/spikeaggregationRule"
 	whitelistrule "elastalert-go/rules/whitelistRule"
 	"errors"
 	"fmt"
@@ -25,7 +26,7 @@ type Rule interface {
 	// Define methods required by the Rule interface
 	GetName() string
 	GetIndex() string
-	GetQuery() (*opensearchapi.SearchRequest, error) // Use interface{} here as the return type can vary
+	GetQuery() (*opensearchapi.SearchRequest, error) 
 	Evaluate(hits []map[string]interface{}) bool
 }
 
@@ -42,6 +43,7 @@ var RuleFactory = map[string]func() Rule{
 	"percentage_match":       func() Rule { return &percentagematchrule.PercentageMatchRule{} },
 	"spike_aggregation":      func() Rule { return &spikeaggregationrule.SpikeAggregationRule{} },
 	"whitelist":             func() Rule { return &whitelistrule.WhitelistRule{}},
+	"spike":				func() Rule {return &spikerule.SpikeRule{}},
 }
 
 type DualEvaluatable interface {

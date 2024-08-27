@@ -8,6 +8,8 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -20,19 +22,28 @@ func Start(cfg *config.Config) {
 		log.Fatalf("Error creating OpenSearch client: %v", err)
 	}
 
-	ruleFiles := []string{
-		"rules/anyrule/any_rule.yaml",
-		"rules/blacklistrule/blacklist_rule.yaml",
-		"rules/cardinalityrule/cardinality_rule.yaml",
-		"rules/changerule/change_rule.yaml",
-		"rules/flatlinerule/flatline_rule.yaml",
-		"rules/frequencyrule/frequency_rule.yaml",
-		"rules/metricagrregationrule/metricaggregation_rule.yaml",
-		"rules/newtermrule/newterm_rule.yaml",
-		"rules/percentagematchrule/percentagematch_rule.yaml",
-		"rules/spikeaggregationrule/spikeaggregation_rule.yaml",
-		"rules/whitelistRule/whitelist_rule.yaml",
-	}
+	// ACCESS THE FOLDER IN WHICH ALL THE POLICIES ARE DEFINED
+	folderPath := "./policies"
+
+	// SLICE TO STORE THE PATH OF ALL YAML FILES DEFINED IN POLICIES FOLDER
+	var ruleFiles []string
+
+	  dirEntries, err := os.ReadDir(folderPath)
+	  if err != nil {
+		  log.Fatalf("Failed to read directory: %v", err)
+	  }
+	  for _, entry := range dirEntries {
+        if entry.IsDir() {
+            continue 
+        }
+
+        filePath := filepath.Join(folderPath, entry.Name())
+
+		// STORE THE YAML FILE'S PATH IN ruleFiles SLICE
+		ruleFiles = append(ruleFiles, filePath)
+
+       
+    }
 
 	var loadedRules []rules.Rule
 

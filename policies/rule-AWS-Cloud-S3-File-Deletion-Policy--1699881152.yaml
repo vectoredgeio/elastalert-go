@@ -1,0 +1,27 @@
+---
+name: AWS Cloud S3 File Deletion Policy
+
+type: frequency
+
+index: access
+
+num_events: 1
+
+attached_related: true
+
+priority: 0
+timeframe:
+  days: 1
+
+timestamp_field: timestamp
+filter:
+  - query:
+      match:
+        event_name:
+          query: "DeleteObjects"
+alert:
+  - slack
+
+slack_webhook_url: "https://hooks.slack.com/services/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"
+slack_channel_override: "#ve-incidents"
+slack_username_override: "@ve-bot"

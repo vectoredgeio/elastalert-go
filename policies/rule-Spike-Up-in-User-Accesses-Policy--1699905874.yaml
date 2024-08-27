@@ -1,0 +1,21 @@
+---
+name: Spike Up in User Accesses Policy
+
+type: spike
+
+index: access
+spike_height: 2
+spike_type: up
+threshold_cur: 3
+
+priority: 0
+timeframe:
+  hours: 1
+
+timestamp_field: timestamp
+alert:
+  - slack
+
+slack_webhook_url: "https://hooks.slack.com/services/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"
+slack_channel_override: "#ve-incidents"
+slack_username_override: "@ve-bot"

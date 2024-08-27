@@ -1,4 +1,4 @@
-es_host: "opensearch.vectoredge.io"
+es_host: "100.94.129.57"
 es_port: 9200
 run_every: "10m"
 buffer_time: "15m"

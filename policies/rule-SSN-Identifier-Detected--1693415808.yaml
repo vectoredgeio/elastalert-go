@@ -1,0 +1,27 @@
+---
+name: SSN Identifier Detected
+
+type: frequency
+
+index: classification
+
+num_events: 1
+
+attached_related: true
+
+priority: 0
+timeframe:
+  hours: 1
+
+timestamp_field: timestamp
+filter:
+  - query:
+      match:
+        identifiers:
+          query: "US_SSN"
+alert:
+  - slack
+
+slack_webhook_url: "https://hooks.slack.com/services/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"
+slack_channel_override: "#ve-incidents"
+slack_username_override: "@ve-bot"

@@ -162,7 +162,14 @@ func (ew *EventWindow) Clear() {
 func (rule *FrequencyRule) GetQuery() (*opensearchapi.SearchRequest, error) {
     // Initialize an empty slice for filters
     var filters []interface{}
-
+	timeframe := ""
+    if rule.Timeframe.Minutes > 0 {
+        timeframe = fmt.Sprintf("now-%dm", rule.Timeframe.Minutes)
+    } else if rule.Timeframe.Hours > 0 {
+        timeframe = fmt.Sprintf("now-%dh", rule.Timeframe.Hours)
+    } else if rule.Timeframe.Days > 0 {
+        timeframe = fmt.Sprintf("now-%dd", rule.Timeframe.Days)
+    }
     // Loop over each filter item from the rule's filter configuration
     for _, f := range rule.Filter {
         if f == nil {
@@ -194,6 +201,15 @@ func (rule *FrequencyRule) GetQuery() (*opensearchapi.SearchRequest, error) {
         "query": map[string]interface{}{
             "bool": map[string]interface{}{
                 "filter": filters, // Use the dynamically created filters
+				"must": []interface{}{
+                    map[string]interface{}{
+                        "range": map[string]interface{}{
+                            rule.TimestampField: map[string]interface{}{
+                                "gte": timeframe,
+                            },
+                        },
+                    },
+                },
             },
         },
     }
@@ -205,6 +221,7 @@ func (rule *FrequencyRule) GetQuery() (*opensearchapi.SearchRequest, error) {
     }
 
     // Create and return the OpenSearch search request
+	fmt.Printf("Generated Query: %s\n", string(queryBytes))
     return &opensearchapi.SearchRequest{
         Index: []string{rule.Index},
         Body:  strings.NewReader(string(queryBytes)),

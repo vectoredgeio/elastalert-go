@@ -1,5 +1,5 @@
 ---
-name: New File Added in Customer Sensitive Folder
+name: New File Added in Customer Sensitive Folder #not working
 
 type: frequency
 
@@ -17,12 +17,13 @@ timestamp_field: timestamp
 filter:
   - query:
       match:
-        file_name:
+        event_name:
           query: "PutObject"
   - query:
       match:
-        event_name:
-          query: "PutObject"
+        file_name:
+          query: "new_customer_report"
+          
 alert:
   - slack
 

@@ -10,7 +10,7 @@ threshold_cur: 3
 
 priority: 0
 timeframe:
-  days: 72
+  hours: 2
 
 timestamp_field: timestamp
 alert:

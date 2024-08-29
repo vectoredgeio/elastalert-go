@@ -1,11 +1,11 @@
 ---
-name: Access Frequency Reached threshold
+name: Access Frequency Reached threshold #tested
 
 type: frequency
 
 index: access
 
-num_events: 2
+num_events: 1
 
 attached_related: true
 

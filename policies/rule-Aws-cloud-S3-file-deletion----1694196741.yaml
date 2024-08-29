@@ -1,5 +1,5 @@
 ---
-name: Aws cloud S3 file deletion
+name: Aws cloud S3 file deletion #tested
 
 type: frequency
 

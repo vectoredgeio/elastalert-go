@@ -12,6 +12,7 @@ import (
 type PercentageMatchRule struct {
 	Name                   string                 `yaml:"name"`
 	Index                  string                 `yaml:"index"`
+	Type  				string       			`yaml:"type"`
 	MatchBucketFilter      map[string]interface{} `yaml:"match_bucket_filter"`
 	QueryKey               string                 `yaml:"query_key"`
 	MinPercentage          float64                `yaml:"min_percentage"`
@@ -126,4 +127,7 @@ func (r *PercentageMatchRule) GetName() string {
 // GetIndex returns the index of the rule
 func (r *PercentageMatchRule) GetIndex() string {
 	return r.Index
+}
+func (r *PercentageMatchRule) GetType() string {
+	return r.Type
 }

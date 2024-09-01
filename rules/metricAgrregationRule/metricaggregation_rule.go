@@ -14,6 +14,7 @@ import (
 type MetricAggregationRule struct {
     Name               string            `yaml:"name"`
     Index              string            `yaml:"index"`
+    Type  				string       			`yaml:"type"`
     MetricAggKey       string            `yaml:"metric_agg_key"`
     MetricAggType      string            `yaml:"metric_agg_type"`
     MaxThreshold       float64           `yaml:"max_threshold"`
@@ -275,4 +276,7 @@ func (r *MetricAggregationRule) GetName() string {
 
 func (r *MetricAggregationRule) GetIndex() string {
 	return r.Index
+}
+func (r *MetricAggregationRule) GetType() string {
+	return r.Type
 }

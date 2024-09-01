@@ -61,12 +61,13 @@ func Start(cfg *config.Config) {
 	// Main loop
 	for {
 		for _, rule := range loadedRules {
+			fmt.Println("rule is",rule.GetIndex())
 			query, err := rule.GetQuery()
 			if err != nil {
 				log.Printf("Error constructing query for rule %s: %v", rule.GetName(), err)
 				continue
 			}
-
+			
 			result, err := queries.Query(client, rule.GetIndex(), query, 1000, rule)
 			if err != nil {
 				log.Printf("Error querying OpenSearch: %v", err)
@@ -78,7 +79,6 @@ func Start(cfg *config.Config) {
 				log.Printf("Error parsing result: %v", err)
 				continue
 			}
-
 			var triggered bool
 			if dualEvalRule, ok := rule.(rules.DualEvaluatable); ok {
 				previousQuery := buildPreviousQuery(query, rule)

@@ -26,6 +26,7 @@ type Rule interface {
 	// Define methods required by the Rule interface
 	GetName() string
 	GetIndex() string
+	GetType() string
 	GetQuery() (*opensearchapi.SearchRequest, error) 
 	Evaluate(hits []map[string]interface{}) bool
 }

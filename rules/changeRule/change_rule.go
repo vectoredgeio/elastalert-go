@@ -12,6 +12,7 @@ import (
 type ChangeRule struct {
 	Name               string                   `yaml:"name"`
 	Index              string                   `yaml:"index"`
+	Type  				string       			`yaml:"type"`
 	QueryKey           string                   `yaml:"query_key"`
 	CompoundCompareKey []string                 `yaml:"compound_compare_key"`
 	IgnoreNull         bool                     `yaml:"ignore_null"`
@@ -104,6 +105,9 @@ func (r *ChangeRule) GetName() string {
 
 func (r *ChangeRule) GetIndex() string {
 	return r.Index
+}
+func (r *ChangeRule) GetType() string {
+	return r.Type
 }
 
 // GetQuery constructs and returns the OpenSearch query for the ChangeRule.

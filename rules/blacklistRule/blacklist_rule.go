@@ -10,6 +10,7 @@ import (
 type BlacklistRule struct {
 	Name       string   `yaml:"name"`
 	Index      string   `yaml:"index"`
+	Type 	string 		`yaml:"type"`
 	CompareKey string   `yaml:"compare_key"`
 	Blacklist  []string `yaml:"blacklist"`
 	Email      []string `yaml:"email"`
@@ -47,6 +48,9 @@ func (r *BlacklistRule) GetName() string {
 
 func (r *BlacklistRule) GetIndex() string {
 	return r.Index
+}
+func (r *BlacklistRule) GetType() string {
+	return r.Type
 }
 
 // GetQuery constructs and returns the OpenSearch query for the BlacklistRule.

@@ -12,6 +12,7 @@ import (
 type NewTermRule struct {
 	Name                string            `yaml:"name"`
 	Index               string            `yaml:"index"`
+	Type  				string       			`yaml:"type"`
 	Fields              []interface{}     `yaml:"fields"` // Can be a list of fields or composite fields
 	QueryKey            string            `yaml:"query_key"` // If fields is not set, query_key will be used
 	TermsWindowSize     time.Duration     `yaml:"terms_window_size"` // Default is 30 days
@@ -45,6 +46,9 @@ func (r *NewTermRule) GetName() string {
 
 func (r *NewTermRule) GetIndex() string {
 	return r.Index
+}
+func (r *NewTermRule) GetType() string {
+	return r.Type
 }
 
 // GetQuery constructs the query for the NewTermRule.

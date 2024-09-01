@@ -10,6 +10,7 @@ import (
 type AnyRule struct {
 	Name  string   `yaml:"name"`
 	Index string   `yaml:"index"`
+	Type string		`yaml:"type"`
 }
 
 // NewAnyRule creates a new instance of the AnyRule.
@@ -53,4 +54,7 @@ func (r *AnyRule) GetName() string {
 // GetIndex returns the index associated with the rule.
 func (r *AnyRule) GetIndex() string {
 	return r.Index
+}
+func (r *AnyRule) GetType() string {
+	return r.Type
 }

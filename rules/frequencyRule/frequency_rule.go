@@ -14,6 +14,7 @@ import (
 type FrequencyRule struct {
 	Name                  string                  `yaml:"name"`
 	Index                 string                  `yaml:"index"`
+    Type  				string       			`yaml:"type"`
 	NumEvents             int                     `yaml:"num_events"`
 	Timeframe             Timeframe               `yaml:"timeframe"`
 	TimestampField        string                  `yaml:"timestamp_field"`
@@ -257,4 +258,8 @@ func (r *FrequencyRule) GetName() string {
 
 func (r *FrequencyRule) GetIndex() string {
 	return r.Index
+}
+
+func (r *FrequencyRule) GetType() string {
+	return r.Type
 }

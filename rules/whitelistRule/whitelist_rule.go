@@ -10,6 +10,7 @@ import (
 type WhitelistRule struct {
 	Name       string   `yaml:"name"`
 	Index      string   `yaml:"index"`
+	Type  				string       			`yaml:"type"`
 	CompareKey string   `yaml:"compare_key"`
 	Whitelist  []string `yaml:"whitelist"`
 	IgnoreNull bool     `yaml:"ignore_null"`
@@ -72,4 +73,7 @@ func (r *WhitelistRule) GetName() string {
 
 func (r *WhitelistRule) GetIndex() string {
 	return r.Index
+}
+func (r *WhitelistRule) GetType() string {
+	return r.Type
 }

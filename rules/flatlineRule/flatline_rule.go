@@ -12,6 +12,7 @@ import (
 type FlatlineRule struct {
 	Name          string        `yaml:"name"`
 	Threshold     int           `yaml:"threshold"`
+	Type  				string       			`yaml:"type"`
 	Timeframe     time.Duration `yaml:"timeframe"`
 	UseCountQuery bool          `yaml:"use_count_query"`
 	DocType       string        `yaml:"doc_type"`
@@ -98,4 +99,7 @@ func (r *FlatlineRule) GetName() string {
 
 func (r *FlatlineRule) GetIndex() string {
 	return r.Index
+}
+func (r *FlatlineRule) GetType() string {
+	return r.Type
 }

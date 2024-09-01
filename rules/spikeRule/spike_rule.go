@@ -4,31 +4,33 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
-	
+
 	"github.com/opensearch-project/opensearch-go/opensearchapi"
 )
 
 type SpikeRule struct {
-	Name                  string                  `yaml:"name"`
-	Index                 string                  `yaml:"index"`
-	SpikeHeight           int                     `yaml:"spike_height"`
-	SpikeType             string                  `yaml:"spike_type"`
-	ThresholdCur          int                     `yaml:"threshold_cur"`
-	Priority              int                     `yaml:"priority"`
-	Timeframe             Timeframe               `yaml:"timeframe"`
-	TimestampField        string                  `yaml:"timestamp_field"`
-	Alert                 []string                `yaml:"alert"`
-	SlackWebhookURL       string                  `yaml:"slack_webhook_url"`
-	SlackChannelOverride  string                  `yaml:"slack_channel_override"`
-	SlackUsernameOverride string                  `yaml:"slack_username_override"`
+	Name                  string   `yaml:"name"`
+	Index                 string   `yaml:"index"`
+	Type  				string       			`yaml:"type"`
+	SpikeHeight           int      `yaml:"spike_height"`
+	SpikeType             string   `yaml:"spike_type"`
+	ThresholdCur          int      `yaml:"threshold_cur"`
+	Priority              int      `yaml:"priority"`
+	Timeframe             Timeframe `yaml:"timeframe"`
+	TimestampField        string   `yaml:"timestamp_field"`
+	Alert                 []string `yaml:"alert"`
+	SlackWebhookURL       string   `yaml:"slack_webhook_url"`
+	SlackChannelOverride  string   `yaml:"slack_channel_override"`
+	SlackUsernameOverride string   `yaml:"slack_username_override"`
 }
+
 type Timeframe struct {
 	Minutes int `yaml:"minutes"`
 	Hours   int `yaml:"hours"`
 	Days    int `yaml:"days"`
 }
 
-func NewSpikeRule(name string, index string, spikeHeight int, spikeType string, thresholdCur int, priority int, timeframe Timeframe, timestampField string, alert []string, slackWebhookURL string, slackChannelOverride string, slackUsernameOverride string) *SpikeRule {
+func NewSpikeRule(name, index string, spikeHeight int, spikeType string, thresholdCur, priority int, timeframe Timeframe, timestampField string, alert []string, slackWebhookURL, slackChannelOverride, slackUsernameOverride string) *SpikeRule {
 	return &SpikeRule{
 		Name:                  name,
 		Index:                 index,
@@ -45,6 +47,7 @@ func NewSpikeRule(name string, index string, spikeHeight int, spikeType string, 
 	}
 }
 
+// Updated GetQuery method
 func (rule *SpikeRule) GetQuery() (*opensearchapi.SearchRequest, error) {
 	// Define the timeframe for the query
 	timeframe := ""
@@ -56,14 +59,14 @@ func (rule *SpikeRule) GetQuery() (*opensearchapi.SearchRequest, error) {
 		timeframe = fmt.Sprintf("now-%dd", rule.Timeframe.Days)
 	}
 
-	// Construct the query with a date histogram aggregation
+	// Construct the query with a date histogram and serial diff aggregation
 	query := map[string]interface{}{
 		"size": 0,
 		"query": map[string]interface{}{
 			"range": map[string]interface{}{
 				rule.TimestampField: map[string]interface{}{
 					"gte": timeframe,
-					"lt":  "now/d",
+					"lt":  "now",
 				},
 			},
 		},
@@ -71,20 +74,34 @@ func (rule *SpikeRule) GetQuery() (*opensearchapi.SearchRequest, error) {
 			"events_over_time": map[string]interface{}{
 				"date_histogram": map[string]interface{}{
 					"field":          rule.TimestampField,
-					"fixed_interval": "1h",
-					"min_doc_count":  1,
+					"fixed_interval": "1h", // Adjust the interval as needed
+					"min_doc_count":  0,    // Set to 0 to ensure all intervals are included
+				},
+				"aggs": map[string]interface{}{
+					"doc_count_diff": map[string]interface{}{
+						"serial_diff": map[string]interface{}{
+							"buckets_path": "_count",
+							"lag":          1, // Compare with the previous bucket
+						},
+					},
+					"spike_filter": map[string]interface{}{
+						"bucket_selector": map[string]interface{}{
+							"buckets_path": map[string]string{
+								"docCountDiff": "doc_count_diff",
+							},
+							"script": fmt.Sprintf("params.docCountDiff != null && params.docCountDiff >= %d", rule.SpikeHeight), // Use spike height threshold
+						},
+					},
 				},
 			},
 		},
 	}
 
-	// Serialize the query to JSON
 	queryBytes, err := json.Marshal(query)
 	if err != nil {
 		return nil, err
 	}
 
-	// Create and return the OpenSearch search request
 	fmt.Printf("Generated Query: %s\n", string(queryBytes))
 	return &opensearchapi.SearchRequest{
 		Index: []string{rule.Index},
@@ -92,46 +109,83 @@ func (rule *SpikeRule) GetQuery() (*opensearchapi.SearchRequest, error) {
 	}, nil
 }
 
-// Evaluate processes the aggregation results to detect spikes.
-func (r *SpikeRule) Evaluate(aggregations []map[string]interface{}) bool {
-	// Assume aggregations is a slice of maps where each map represents a bucket
-	var spikeDetected bool
+func (r *SpikeRule) Evaluate(hits []map[string]interface{}) bool {
+	fmt.Println("inside evaluate of spike rule",hits)
+    if len(hits) == 0 {
+        return false
+    }
 
-	for _, aggr := range aggregations {
-		eventsAgg, ok := aggr["events_over_time"].(map[string]interface{})
-		if !ok {
-			fmt.Println("Invalid aggregation format")
-			return false
-		}
+    // Extract aggregations from hits
+    var aggregations map[string]interface{}
+    if aggs, ok := hits[0]["aggregations"]; ok {
+        aggregations, _ = aggs.(map[string]interface{})
+    }
 
-		buckets, ok := eventsAgg["buckets"].([]interface{})
-		if !ok {
-			fmt.Println("Invalid buckets format")
-			return false
-		}
+    eventsAgg, ok := aggregations["events_over_time"].(map[string]interface{})
+    if !ok {
+        fmt.Println("Invalid aggregation format")
+        return false
+    }
 
-		for i, bucket := range buckets {
-			bucketMap, ok := bucket.(map[string]interface{})
-			if !ok {
-				fmt.Println("Invalid bucket format")
-				continue
-			}
+    buckets, ok := eventsAgg["buckets"].([]interface{})
+    if !ok {
+        fmt.Println("Invalid buckets format")
+        return false
+    }
 
-			docCount, _ := bucketMap["doc_count"].(float64)
-			if docCount >= float64(r.ThresholdCur) {
-				if r.SpikeType == "up" && i > 0 {
-					previousBucket := buckets[i-1].(map[string]interface{})
-					previousCount, _ := previousBucket["doc_count"].(float64)
-					if docCount-previousCount >= float64(r.SpikeHeight) {
-						spikeDetected = true
-					}
-				}
-			}
-		}
-	}
+    for _, bucket := range buckets {
+        bucketMap, ok := bucket.(map[string]interface{})
+        if !ok {
+            continue
+        }
 
-	return spikeDetected
+        docCount, _ := bucketMap["doc_count"].(float64)
+        docCountDiff, _ := bucketMap["doc_count_diff"].(map[string]interface{})["value"].(float64)
+
+        if r.SpikeType == "up" && docCount >= float64(r.ThresholdCur) && docCountDiff >= float64(r.SpikeHeight) {
+            return true
+        }
+    }
+
+    return false
 }
+func (r *SpikeRule) EvaluateAggregations(aggregations map[string]interface{}) bool {
+
+	fmt.Println("inside evaluate aggregations function",aggregations)
+    if aggregations == nil {
+        return false
+    }
+
+    eventsAgg, ok := aggregations["events_over_time"].(map[string]interface{})
+    if !ok {
+        fmt.Println("Invalid aggregation format")
+        return false
+    }
+
+    buckets, ok := eventsAgg["buckets"].([]interface{})
+    if !ok {
+        fmt.Println("Invalid buckets format")
+        return false
+    }
+
+    for _, bucket := range buckets {
+        bucketMap, ok := bucket.(map[string]interface{})
+        if !ok {
+            continue
+        }
+
+        docCount, _ := bucketMap["doc_count"].(float64)
+        docCountDiffMap, _ := bucketMap["doc_count_diff"].(map[string]interface{})
+        docCountDiff, _ := docCountDiffMap["value"].(float64)
+
+        if r.SpikeType == "up" && docCount >= float64(r.ThresholdCur) && docCountDiff >= float64(r.SpikeHeight) {
+            return true
+        }
+    }
+
+    return false
+}
+
 
 func (r *SpikeRule) GetName() string {
 	return r.Name
@@ -139,4 +193,7 @@ func (r *SpikeRule) GetName() string {
 
 func (r *SpikeRule) GetIndex() string {
 	return r.Index
+}
+func (r *SpikeRule) GetType() string {
+	return r.Type
 }

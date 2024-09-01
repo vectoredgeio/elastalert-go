@@ -20,6 +20,7 @@ type CardinalityRule struct {
 	Email            []string          `yaml:"email"`
 	Occurrences      map[string]int    `yaml:"-"`
 	FirstEvent       map[string]time.Time `yaml:"-"`
+	Type			string					`yaml:"type"`
 }
 type Timeframe struct {
 	Minutes int `yaml:"minutes"`
@@ -95,6 +96,9 @@ func (r *CardinalityRule) GetName() string {
 
 func (r *CardinalityRule) GetIndex() string {
 	return r.Index
+}
+func (r *CardinalityRule) GetType() string {
+	return r.Type
 }
 
 // GetQuery constructs and returns the OpenSearch query for the CardinalityRule.

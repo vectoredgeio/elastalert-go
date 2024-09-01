@@ -12,6 +12,7 @@ import (
 type SpikeAggregationRule struct {
 	Name       string        `yaml:"name"`
 	Index      string        `yaml:"index"`
+	Type  				string       			`yaml:"type"`
 	QueryKey   string        `yaml:"query_key"`
 	Timeframe  time.Duration `yaml:"timeframe"`
 	SpikeHeight float64      `yaml:"spike_height"`
@@ -129,4 +130,7 @@ func (r *SpikeAggregationRule) GetName() string {
 
 func (r *SpikeAggregationRule) GetIndex() string {
 	return r.Index
+}
+func (r *SpikeAggregationRule) GetType() string {
+	return r.Type
 }

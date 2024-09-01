@@ -1,15 +1,15 @@
 ---
-name: 100 Unique users accessing at a time
+name: 100 Unique users accessing at a time #tested
 
 type: cardinality
 
 index: access
-cardinality_field: userName
-max_cardinality: 0
+cardinality_field: user_name
+max_cardinality: 1
 
 priority: 0
 timeframe:
-  hours: 3000
+  days: 1
 
 timestamp_field: timestamp
 alert:

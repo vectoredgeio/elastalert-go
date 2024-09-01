@@ -3,7 +3,7 @@ name: GDPR Label Detected
 
 type: frequency
 
-index: classification
+index: ve-classification-1
 
 num_events: 1
 

@@ -1,11 +1,11 @@
 ---
-name: File Added to S3 Bucket Policy
+name: File Added to S3 Bucket Policy #tested
 
 type: frequency
 
 index: access
 
-num_events: 5
+num_events: 1
 
 attached_related: true
 

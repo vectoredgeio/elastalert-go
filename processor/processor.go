@@ -61,49 +61,57 @@ func Start(cfg *config.Config) {
 	// Main loop
 	for {
 		for _, rule := range loadedRules {
-			fmt.Println("rule is",rule.GetIndex())
+			fmt.Printf("Processing rule: %s (type: %T)\n", rule.GetName(), rule)
+
 			query, err := rule.GetQuery()
 			if err != nil {
 				log.Printf("Error constructing query for rule %s: %v", rule.GetName(), err)
 				continue
 			}
-			
+		
 			result, err := queries.Query(client, rule.GetIndex(), query, 1000, rule)
 			if err != nil {
 				log.Printf("Error querying OpenSearch: %v", err)
 				continue
 			}
-
-			hits, err := parseResult(result)
+		
+			hits, aggs, err := parseResult(result)
+			fmt.Println("aggs are",aggs)
 			if err != nil {
 				log.Printf("Error parsing result: %v", err)
 				continue
 			}
+		
 			var triggered bool
 			if dualEvalRule, ok := rule.(rules.DualEvaluatable); ok {
+				fmt.Println("inside dual evaluatable")
 				previousQuery := buildPreviousQuery(query, rule)
 				prevResult, err := queries.Query(client, rule.GetIndex(), previousQuery, 1000, rule)
 				if err != nil {
 					log.Printf("Error querying previous results for rule %s: %v", rule.GetName(), err)
 					continue
 				}
-
-				previousHits, err := parseResult(prevResult)
+		
+				previousHits, _, err := parseResult(prevResult)
 				if err != nil {
 					log.Printf("Error parsing previous result: %v", err)
 					continue
 				}
-
+		
 				triggered = dualEvalRule.EvaluateDual(hits, previousHits)
+			} else if spikeRule, ok := rule.(rules.EvaluateAggregations); ok {
+				fmt.Println("inside else if block with aggregations",aggs)
+				triggered = spikeRule.EvaluateAggregations(aggs)
 			} else {
 				triggered = rule.Evaluate(hits)
 			}
-
+		
 			if triggered {
 				message := fmt.Sprintf("Rule %s triggered: %d events found", rule.GetName(), len(hits))
 				sendAlerts(rule, message)
 			}
 		}
+		
 
 		interval, err := time.ParseDuration(cfg.RunEvery)
 		if err != nil {
@@ -113,28 +121,51 @@ func Start(cfg *config.Config) {
 	}
 }
 
-func parseResult(result *opensearchapi.Response) ([]map[string]interface{}, error) {
-	body, err := ioutil.ReadAll(result.Body)
-	if err != nil {
-		return nil, fmt.Errorf("error reading result body: %v", err)
+func parseResult(result *opensearchapi.Response) ([]map[string]interface{}, map[string]interface{}, error) {
+    body, err := ioutil.ReadAll(result.Body)
+    if err != nil {
+        return nil, nil, fmt.Errorf("error reading result body: %v", err)
+    }
+
+    var searchResult map[string]interface{}
+    if err := json.Unmarshal(body, &searchResult); err != nil {
+        return nil, nil, fmt.Errorf("error unmarshalling JSON: %v", err)
+    }
+
+    hits, ok := searchResult["hits"].(map[string]interface{})["hits"].([]interface{})
+    if !ok {
+        return nil, nil, fmt.Errorf("unexpected format of hits in search result")
+    }
+
+    hitsMap := make([]map[string]interface{}, len(hits))
+    for i, hit := range hits {
+        hitsMap[i] = hit.(map[string]interface{})
+    }
+
+    fmt.Println("search results are", searchResult)
+
+    // Check if "aggregations" exists in the response
+    aggsRaw, ok := searchResult["aggregations"]
+    if !ok {
+        // Aggregations do not exist, return hits and nil for aggregations
+        fmt.Println("aggregations key does not exist in the response")
+        return hitsMap, nil, nil
+    }else{
+		fmt.Println("raw aggregations are",aggsRaw)
 	}
 
-	var searchResult map[string]interface{}
-	if err := json.Unmarshal(body, &searchResult); err != nil {
-		return nil, fmt.Errorf("error unmarshalling JSON: %v", err)
-	}
+    aggs, ok := aggsRaw.(map[string]interface{})
+    if !ok {
+        // Aggregations exist but are not in the expected format
+        return hitsMap, nil, fmt.Errorf("unexpected format of aggregations in search result")
+    }
 
-	hits, ok := searchResult["hits"].(map[string]interface{})["hits"].([]interface{})
-	if !ok {
-		return nil, fmt.Errorf("unexpected format of hits in search result")
-	}
+    fmt.Println("aggregations are", aggs)
 
-	hitsMap := make([]map[string]interface{}, len(hits))
-	for i, hit := range hits {
-		hitsMap[i] = hit.(map[string]interface{})
-	}
-	return hitsMap, nil
+    return hitsMap, aggs, nil
 }
+
+
 
 func buildPreviousQuery(query *opensearchapi.SearchRequest, rule rules.Rule) *opensearchapi.SearchRequest {
 	// Logic to adjust the query to fetch previous data (e.g., change date range)

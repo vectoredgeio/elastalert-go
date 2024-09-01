@@ -150,8 +150,7 @@ func (r *SpikeRule) Evaluate(hits []map[string]interface{}) bool {
     return false
 }
 func (r *SpikeRule) EvaluateAggregations(aggregations map[string]interface{}) bool {
-
-	fmt.Println("inside evaluate aggregations function",aggregations)
+	fmt.Println("inside evaluate of spike rule",aggregations)
     if aggregations == nil {
         return false
     }
@@ -185,6 +184,7 @@ func (r *SpikeRule) EvaluateAggregations(aggregations map[string]interface{}) bo
 
     return false
 }
+
 
 
 func (r *SpikeRule) GetName() string {

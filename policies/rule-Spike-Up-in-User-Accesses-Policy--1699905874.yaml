@@ -6,11 +6,11 @@ type: spike
 index: access
 spike_height: 2
 spike_type: up
-threshold_cur: 3
+threshold_cur: 8
 
 priority: 0
 timeframe:
-  hours: 72
+  days: 4
 
 timestamp_field: timestamp
 alert:

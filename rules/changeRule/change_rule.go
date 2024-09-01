@@ -12,17 +12,17 @@ import (
 )
 
 type ChangeRule struct {
-	Name               string                   `yaml:"name"`
-	Index              string                   `yaml:"index"`
-	Type               string                   `yaml:"type"`
-	QueryKey           string                   `yaml:"query_key"`
-	CompoundCompareKey []string                 `yaml:"compound_compare_key"`
-	IgnoreNull         bool                     `yaml:"ignore_null"`
-	Timeframe          time.Duration            `yaml:"timeframe"`
-	TsField            string                   `yaml:"ts_field"`
-	Occurrences        map[string][]interface{} `yaml:"occurrences"`
-	OccurrenceTime     map[string]time.Time     `yaml:"occurrence_time"`
-	ChangeMap          map[string][]interface{} `yaml:"change_map"`
+	Name           string                   `yaml:"name"`
+	Type           string                   `yaml:"type"`
+	Index          string                   `yaml:"index"`
+	QueryKey       string                   `yaml:"query_key"`
+	CompareKey     string                   `yaml:"compare_key"` // Changed to CompareKey
+	IgnoreNull     bool                     `yaml:"ignore_null"`
+	Timeframe      Timeframe                `yaml:"timeframe"`
+	TsField        string                   `yaml:"timestamp_field"` // Changed to match YAML field
+	Occurrences    map[string][]interface{} `yaml:"occurrences"`
+	OccurrenceTime map[string]time.Time     `yaml:"occurrence_time"`
+	ChangeMap      map[string][]interface{} `yaml:"change_map"`
 }
 
 type Timeframe struct {
@@ -246,7 +246,7 @@ func (r *ChangeRule) GetQuery() (*opensearchapi.SearchRequest, error) {
 
 // Evaluate processes the query results.
 func (r *ChangeRule) Evaluate(hits []map[string]interface{}) bool {
-	changeDetected := false
+    changeDetected:=false
 	for _, hit := range hits {
 		source, ok := hit["_source"].(map[string]interface{})
 		if !ok {

@@ -1,14 +1,15 @@
 package metricaggregationrule
 
 import (
-    "encoding/json"
-    "fmt"
-    "math"
-    "sort"
-    "strings"
-    "time"
+	"elastalert-go/util"
+	"encoding/json"
+	"fmt"
+	"math"
+	"sort"
+	"strings"
+	"time"
 
-    "github.com/opensearch-project/opensearch-go/opensearchapi"
+	"github.com/opensearch-project/opensearch-go/opensearchapi"
 )
 
 type MetricAggregationRule struct {
@@ -52,7 +53,8 @@ func NewMetricAggregationRule(name, index, metricAggKey, metricAggType string, m
     }
 }
 
-func (r *MetricAggregationRule) Evaluate(hits []map[string]interface{}) (bool) {
+func (r *MetricAggregationRule) Evaluate(response *opensearchapi.Response) (bool) {
+    hits,_:=util.GetHitsFromResponse(response)
     endTime := time.Now().Add(-r.BufferTime)
     startTime := endTime.Add(-r.CalculationWindow)
 
@@ -198,33 +200,33 @@ func (r *MetricAggregationRule) checkThresholds(metricValue float64) bool {
     return false
 }
 
-func (r *MetricAggregationRule) ParseAndEvaluate(responseBody []byte) (bool) {
-    var searchResult map[string]interface{}
-    if err := json.Unmarshal(responseBody, &searchResult); err != nil {
-        return false
-    }
+// func (r *MetricAggregationRule) ParseAndEvaluate(responseBody []byte) (bool) {
+//     var searchResult map[string]interface{}
+//     if err := json.Unmarshal(responseBody, &searchResult); err != nil {
+//         return false
+//     }
 
-    hits, ok := searchResult["hits"].(map[string]interface{})
-    if !ok {
-        return false
-    }
+//     hits, ok := searchResult["hits"].(map[string]interface{})
+//     if !ok {
+//         return false
+//     }
 
-    hitsArray, ok := hits["hits"].([]interface{})
-    if !ok {
-        return false
-    }
+//     hitsArray, ok := hits["hits"].([]interface{})
+//     if !ok {
+//         return false
+//     }
 
-    var hitMaps []map[string]interface{}
-    for _, hit := range hitsArray {
-        hitMap, ok := hit.(map[string]interface{})
-        if !ok {
-            return false
-        }
-        hitMaps = append(hitMaps, hitMap)
-    }
+//     var hitMaps []map[string]interface{}
+//     for _, hit := range hitsArray {
+//         hitMap, ok := hit.(map[string]interface{})
+//         if !ok {
+//             return false
+//         }
+//         hitMaps = append(hitMaps, hitMap)
+//     }
 
-    return r.Evaluate(hitMaps)
-}
+//     return r.Evaluate(hitMaps)
+// }
 
 // GetQuery constructs and returns the OpenSearch query for the MetricAggregationRule.
 func (r *MetricAggregationRule) GetQuery() (*opensearchapi.SearchRequest, error) {

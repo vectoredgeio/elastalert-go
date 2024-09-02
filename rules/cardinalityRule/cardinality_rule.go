@@ -1,6 +1,7 @@
 package cardinalityrule
 
 import (
+	"elastalert-go/util"
 	"encoding/json"
 	"fmt"
 	"strings"
@@ -156,7 +157,8 @@ func (r *CardinalityRule) GetQuery() (*opensearchapi.SearchRequest, error) {
 
 
 
-func (r *CardinalityRule) Evaluate(hits []map[string]interface{}) bool {
+func (r *CardinalityRule) Evaluate(response *opensearchapi.Response) bool {
+	hits,_:=util.GetHitsFromResponse(response)
 	cardinality := r.calculateCardinality(hits)
 
 	fmt.Printf("Calculated Cardinality: %d\n", cardinality)

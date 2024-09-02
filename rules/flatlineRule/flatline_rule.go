@@ -1,6 +1,7 @@
 package flatlinerule
 
 import (
+	"elastalert-go/util"
 	"encoding/json"
 	"fmt"
 	"strings"
@@ -91,7 +92,8 @@ func (r *FlatlineRule) GetQuery() (*opensearchapi.SearchRequest, error) {
 }
 
 // Evaluate processes the query results.
-func (r *FlatlineRule) Evaluate(hits []map[string]interface{}) bool {
+func (r *FlatlineRule) Evaluate(response *opensearchapi.Response) bool {
+	hits,_:=util.GetHitsFromResponse(response)
 	return r.Matches(hits)
 }
 

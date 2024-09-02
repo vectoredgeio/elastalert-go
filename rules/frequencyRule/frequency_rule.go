@@ -234,7 +234,8 @@ func (rule *FrequencyRule) GetQuery() (*opensearchapi.SearchRequest, error) {
 
 
 
-func (r *FrequencyRule) Evaluate(hits []map[string]interface{}) bool {
+func (r *FrequencyRule) Evaluate(response *opensearchapi.Response) bool {
+    hits,_:=util.GetHitsFromResponse(response)
 	if hits == nil {
 		fmt.Println("No hits found in the response")
 		return false

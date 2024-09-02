@@ -5,6 +5,7 @@ import (
 	"elastalert-go/config"
 	"elastalert-go/queries"
 	"elastalert-go/rules"
+	"elastalert-go/util"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -75,8 +76,8 @@ func Start(cfg *config.Config) {
 				continue
 			}
 
-			hits, aggs, err := parseResult(result)
-			fmt.Println("aggs are", aggs)
+			// hits, aggs, err := parseResult(result)
+			// fmt.Println("aggs are", aggs)
 			if err != nil {
 				log.Printf("Error parsing result: %v", err)
 				continue
@@ -97,23 +98,20 @@ func Start(cfg *config.Config) {
 					log.Printf("Error parsing previous result: %v", err)
 					continue
 				}
-
+				hits,_:=util.GetHitsFromResponse(result)
 				triggered = dualEvalRule.EvaluateDual(hits, previousHits)
-			} else if spikeRule, ok := rule.(rules.EvaluateAggregations); ok {
-				fmt.Println("inside else if block with aggregations", aggs)
-				triggered = spikeRule.EvaluateAggregations(aggs)
 			} else {
-				triggered = rule.Evaluate(hits)
+				triggered = rule.Evaluate(result)
 			}
 
 			if triggered {
-				var count int
-				if len(hits) > 0 {
-					count = len(hits)
-				} else {
-					count = len(aggs)
-				}
-				message := fmt.Sprintf("Rule %s triggered: %d events found", rule.GetName(), count)
+				// var count int
+				// if len(hits) > 0 {
+				// 	count = len(hits)
+				// } else {
+				// 	count = len(aggs)
+				// }
+				message := fmt.Sprintf("Rule %s triggered: %d events found", rule.GetName())
 
 				sendAlerts(rule, message)
 			}
@@ -172,9 +170,7 @@ func parseResult(result *opensearchapi.Response) ([]map[string]interface{}, map[
 }
 
 func buildPreviousQuery(query *opensearchapi.SearchRequest, rule rules.Rule) *opensearchapi.SearchRequest {
-	// Logic to adjust the query to fetch previous data (e.g., change date range)
-	// This is a placeholder and should be customized as per your use case
-	// For simplicity, assuming we fetch data from the previous window size
+	
 	var previousQuery map[string]interface{}
 	queryBytes, _ := ioutil.ReadAll(query.Body)
 	json.Unmarshal(queryBytes, &previousQuery)

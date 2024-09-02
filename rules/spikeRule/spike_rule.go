@@ -1,6 +1,7 @@
 package spikerule
 
 import (
+	"elastalert-go/util"
 	"encoding/json"
 	"fmt"
 	"strings"
@@ -109,49 +110,9 @@ func (rule *SpikeRule) GetQuery() (*opensearchapi.SearchRequest, error) {
 	}, nil
 }
 
-func (r *SpikeRule) Evaluate(hits []map[string]interface{}) bool {
-	fmt.Println("inside evaluate of spike rule",hits)
-    if len(hits) == 0 {
-        return false
-    }
-
-    // Extract aggregations from hits
-    var aggregations map[string]interface{}
-    if aggs, ok := hits[0]["aggregations"]; ok {
-        aggregations, _ = aggs.(map[string]interface{})
-    }
-
-    eventsAgg, ok := aggregations["events_over_time"].(map[string]interface{})
-    if !ok {
-        fmt.Println("Invalid aggregation format")
-        return false
-    }
-
-    buckets, ok := eventsAgg["buckets"].([]interface{})
-    if !ok {
-        fmt.Println("Invalid buckets format")
-        return false
-    }
-
-    for _, bucket := range buckets {
-        bucketMap, ok := bucket.(map[string]interface{})
-        if !ok {
-            continue
-        }
-
-        docCount, _ := bucketMap["doc_count"].(float64)
-        docCountDiff, _ := bucketMap["doc_count_diff"].(map[string]interface{})["value"].(float64)
-
-        if r.SpikeType == "up" && docCount >= float64(r.ThresholdCur) && docCountDiff >= float64(r.SpikeHeight) {
-            return true
-        }
-    }
-
-    return false
-}
-func (r *SpikeRule) EvaluateAggregations(aggregations map[string]interface{}) bool {
-	fmt.Println("inside evaluate of spike rule",aggregations)
-    if aggregations == nil {
+func (r *SpikeRule) Evaluate(response *opensearchapi.Response) bool {
+	aggregations,_:=util.GetAggregationsFromResponse(response)
+	if aggregations == nil {
         return false
     }
 
@@ -184,6 +145,7 @@ func (r *SpikeRule) EvaluateAggregations(aggregations map[string]interface{}) bo
 
     return false
 }
+
 
 
 

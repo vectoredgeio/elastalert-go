@@ -1,6 +1,7 @@
 package anyrule
 
 import (
+	"elastalert-go/util"
 	"encoding/json"
 	"strings"
 
@@ -51,7 +52,8 @@ func (r *AnyRule) GetQuery() (*opensearchapi.SearchRequest, error) {
 }
 
 // Since this is the "Any Rule", it always returns true to indicate an alert should be triggered.
-func (r *AnyRule) Evaluate(hits []map[string]interface{}) bool {
+func (r *AnyRule) Evaluate(response *opensearchapi.Response) bool {
+	hits,_:=util.GetHitsFromResponse(response)
 	// For the "Any Rule", simply return true for any hits received.
 	return len(hits) > 0
 }

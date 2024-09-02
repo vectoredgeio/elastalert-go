@@ -1,6 +1,7 @@
 package percentagematchrule
 
 import (
+	"elastalert-go/util"
 	"encoding/json"
 	"fmt"
 	"strings"
@@ -99,7 +100,8 @@ func (r *PercentageMatchRule) GetQuery() (*opensearchapi.SearchRequest, error) {
 }
 
 // Evaluate processes the query results to calculate the percentage of matching documents
-func (r *PercentageMatchRule) Evaluate(responseBody []map[string]interface{}) bool {
+func (r *PercentageMatchRule) Evaluate(response *opensearchapi.Response) bool {
+	responseBody,_:=util.GetHitsFromResponse(response)
 	if len(responseBody) == 0 {
 		return false
 	}

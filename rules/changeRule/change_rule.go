@@ -2,6 +2,7 @@ package changerule
 
 import (
 	// "context"
+	"elastalert-go/util"
 	"encoding/json"
 	"fmt"
 	"strings"
@@ -253,7 +254,8 @@ func (r *ChangeRule) GetQuery() (*opensearchapi.SearchRequest, error) {
 // }
 
 // Evaluate processes the query results.
-func (r *ChangeRule) Evaluate(hits []map[string]interface{}) bool {
+func (r *ChangeRule) Evaluate(response *opensearchapi.Response) bool {
+	hits,_:=util.GetHitsFromResponse(response)
     changeDetected:=false
 	for _, hit := range hits {
 		source, ok := hit["_source"].(map[string]interface{})

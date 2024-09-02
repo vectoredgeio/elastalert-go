@@ -1,6 +1,7 @@
 package whitelistrule
 
 import (
+	"elastalert-go/util"
 	"fmt"
 	"strings"
 
@@ -61,7 +62,8 @@ func (r *WhitelistRule) GetQuery() (*opensearchapi.SearchRequest, error) {
 }
 
 // Evaluate processes the query results to determine if any event matches the whitelist criteria.
-func (r *WhitelistRule) Evaluate(hits []map[string]interface{}) bool {
+func (r *WhitelistRule) Evaluate(response *opensearchapi.Response) bool {
+	hits,_:=util.GetHitsFromResponse(response)
 	for _, hit := range hits {
 		if r.Matches(hit["_source"].(map[string]interface{})) {
 			return true

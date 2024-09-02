@@ -9,7 +9,7 @@ max_cardinality: 1
 
 priority: 0
 timeframe:
-  days: 1
+  days: 10
 
 timestamp_field: timestamp
 alert:

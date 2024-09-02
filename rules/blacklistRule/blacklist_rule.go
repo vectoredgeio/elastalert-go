@@ -1,6 +1,7 @@
 package blacklistrule
 
 import (
+	"elastalert-go/util"
 	"encoding/json"
 	"strings"
 
@@ -89,7 +90,8 @@ func (r *BlacklistRule) GetQuery() (*opensearchapi.SearchRequest, error) {
 }
 
 // Evaluate processes the query results.
-func (r *BlacklistRule) Evaluate(hits []map[string]interface{}) bool {
+func (r *BlacklistRule) Evaluate(response *opensearchapi.Response) bool {
+	hits,_:=util.GetHitsFromResponse(response)
 	for _, hit := range hits {
 		if r.Matches(hit["_source"].(map[string]interface{})) {
 			return true

@@ -109,7 +109,7 @@ func (r *NewTermRule) GetQuery() (*opensearchapi.SearchRequest, error) {
 
 
 
-func (r *NewTermRule) Evaluate(hits []map[string]interface{}) bool {
+func (r *NewTermRule) Evaluate(response *opensearchapi.Response) bool {
 	// This method can remain empty or just return false, as it's not used for NewTermRule.
 	return false
 }

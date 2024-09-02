@@ -1,6 +1,7 @@
 package spikeaggregationrule
 
 import (
+	"elastalert-go/util"
 	"encoding/json"
 	"fmt"
 	"strings"
@@ -81,7 +82,8 @@ func (r *SpikeAggregationRule) GetQuery() (*opensearchapi.SearchRequest, error) 
 }
 
 // Evaluate processes the query results to check for spikes.
-func (r *SpikeAggregationRule) Evaluate(responseBody []map[string]interface{}) bool {
+func (r *SpikeAggregationRule) Evaluate(response *opensearchapi.Response) bool {
+	responseBody,_:=util.GetHitsFromResponse(response)
 	if len(responseBody) == 0 {
 		return false
 	}

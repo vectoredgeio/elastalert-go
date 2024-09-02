@@ -28,7 +28,7 @@ type Rule interface {
 	GetIndex() string
 	GetType() string
 	GetQuery() (*opensearchapi.SearchRequest, error) 
-	Evaluate(hits []map[string]interface{}) bool
+	Evaluate(response *opensearchapi.Response) bool
 	GetAlertTypes() []string
     GetSlackWebhookURL() string
 }
@@ -52,9 +52,7 @@ var RuleFactory = map[string]func() Rule{
 type DualEvaluatable interface {
     EvaluateDual(currentHits, previousHits []map[string]interface{}) bool
 }
-type EvaluateAggregations interface {
-    EvaluateAggregations(aggregations map[string]interface{}) bool
-}
+
 
 // LoadRule dynamically loads a rule based on its YAML configuration file.
 func LoadRule(filename string) (Rule, error) {
@@ -92,13 +90,11 @@ func LoadRule(filename string) (Rule, error) {
 
 
 
-func EvaluateRule(rule Rule, currentHits, previousHits []map[string]interface{}, aggregations map[string]interface{}) bool {
+func EvaluateRule(rule Rule, currentHits, previousHits []map[string]interface{},response *opensearchapi.Response) bool {
     if dualRule, ok := rule.(DualEvaluatable); ok {
         return dualRule.EvaluateDual(currentHits, previousHits)
-    } else if aggRule, ok := rule.(EvaluateAggregations); ok {
-        return aggRule.EvaluateAggregations(aggregations)
     } else {
-        return rule.Evaluate(currentHits)
+        return rule.Evaluate(response)
     }
 }
 

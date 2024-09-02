@@ -93,7 +93,7 @@ func Start(cfg *config.Config) {
 					continue
 				}
 
-				previousHits, _, err := parseResult(prevResult)
+				previousHits, err:= util.GetHitsFromResponse(prevResult)
 				if err != nil {
 					log.Printf("Error parsing previous result: %v", err)
 					continue
@@ -105,13 +105,7 @@ func Start(cfg *config.Config) {
 			}
 
 			if triggered {
-				// var count int
-				// if len(hits) > 0 {
-				// 	count = len(hits)
-				// } else {
-				// 	count = len(aggs)
-				// }
-				message := fmt.Sprintf("Rule %s triggered: %d events found", rule.GetName())
+				message := fmt.Sprintf("Rule %s triggered", rule.GetName())
 
 				sendAlerts(rule, message)
 			}
@@ -125,49 +119,6 @@ func Start(cfg *config.Config) {
 	}
 }
 
-func parseResult(result *opensearchapi.Response) ([]map[string]interface{}, map[string]interface{}, error) {
-	body, err := ioutil.ReadAll(result.Body)
-	if err != nil {
-		return nil, nil, fmt.Errorf("error reading result body: %v", err)
-	}
-
-	var searchResult map[string]interface{}
-	if err := json.Unmarshal(body, &searchResult); err != nil {
-		return nil, nil, fmt.Errorf("error unmarshalling JSON: %v", err)
-	}
-
-	hits, ok := searchResult["hits"].(map[string]interface{})["hits"].([]interface{})
-	if !ok {
-		return nil, nil, fmt.Errorf("unexpected format of hits in search result")
-	}
-
-	hitsMap := make([]map[string]interface{}, len(hits))
-	for i, hit := range hits {
-		hitsMap[i] = hit.(map[string]interface{})
-	}
-
-	fmt.Println("search results are", searchResult)
-
-	// Check if "aggregations" exists in the response
-	aggsRaw, ok := searchResult["aggregations"]
-	if !ok {
-		// Aggregations do not exist, return hits and nil for aggregations
-		fmt.Println("aggregations key does not exist in the response")
-		return hitsMap, nil, nil
-	} else {
-		fmt.Println("raw aggregations are", aggsRaw)
-	}
-
-	aggs, ok := aggsRaw.(map[string]interface{})
-	if !ok {
-		// Aggregations exist but are not in the expected format
-		return hitsMap, nil, fmt.Errorf("unexpected format of aggregations in search result")
-	}
-
-	fmt.Println("aggregations are", aggs)
-
-	return hitsMap, aggs, nil
-}
 
 func buildPreviousQuery(query *opensearchapi.SearchRequest, rule rules.Rule) *opensearchapi.SearchRequest {
 	

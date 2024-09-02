@@ -11,6 +11,16 @@ type AnyRule struct {
 	Name  string   `yaml:"name"`
 	Index string   `yaml:"index"`
 	Type string		`yaml:"type"`
+	   Alert              []string `yaml:"alert"`
+    SlackWebhookURL    string   `yaml:"slack_webhook_url"`
+}
+
+func (c *AnyRule) GetAlertTypes() []string {
+    return c.Alert
+}
+
+func (c *AnyRule) GetSlackWebhookURL() string {
+    return c.SlackWebhookURL
 }
 
 // NewAnyRule creates a new instance of the AnyRule.

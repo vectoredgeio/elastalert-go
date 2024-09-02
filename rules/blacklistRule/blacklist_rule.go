@@ -15,6 +15,8 @@ type BlacklistRule struct {
 	Blacklist  []string `yaml:"blacklist"`
 	Email      []string `yaml:"email"`
 	IgnoreNull bool     `yaml:"ignore_null"`
+	   Alert              []string `yaml:"alert"`
+    SlackWebhookURL    string   `yaml:"slack_webhook_url"`
 }
 
 func NewBlacklistRule(name, index, compareKey string, blacklist []string, email []string, ignoreNull bool) *BlacklistRule {
@@ -52,7 +54,13 @@ func (r *BlacklistRule) GetIndex() string {
 func (r *BlacklistRule) GetType() string {
 	return r.Type
 }
+func (c *BlacklistRule) GetAlertTypes() []string {
+    return c.Alert
+}
 
+func (c *BlacklistRule) GetSlackWebhookURL() string {
+    return c.SlackWebhookURL
+}
 // GetQuery constructs and returns the OpenSearch query for the BlacklistRule.
 func (r *BlacklistRule) GetQuery() (*opensearchapi.SearchRequest, error) {
 	query := map[string]interface{}{

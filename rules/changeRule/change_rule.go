@@ -23,6 +23,8 @@ type ChangeRule struct {
 	Occurrences    map[string][]interface{} `yaml:"occurrences"`
 	OccurrenceTime map[string]time.Time     `yaml:"occurrence_time"`
 	ChangeMap      map[string][]interface{} `yaml:"change_map"`
+	   Alert              []string `yaml:"alert"`
+    SlackWebhookURL    string   `yaml:"slack_webhook_url"`
 }
 
 type Timeframe struct {
@@ -149,7 +151,13 @@ func (r *ChangeRule) GetIndex() string {
 func (r *ChangeRule) GetType() string {
 	return r.Type
 }
+func (c *ChangeRule) GetAlertTypes() []string {
+    return c.Alert
+}
 
+func (c *ChangeRule) GetSlackWebhookURL() string {
+    return c.SlackWebhookURL
+}
 func (r *ChangeRule) GetQuery() (*opensearchapi.SearchRequest, error) {
 	timeframe := ""
 	if r.Timeframe.Minutes > 0 {

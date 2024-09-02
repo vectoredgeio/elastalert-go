@@ -18,6 +18,8 @@ type SpikeAggregationRule struct {
 	SpikeHeight float64      `yaml:"spike_height"`
 	SpikeType  string        `yaml:"spike_type"`
 	Filter     map[string]interface{} `yaml:"filter"`
+	   Alert              []string `yaml:"alert"`
+    SlackWebhookURL    string   `yaml:"slack_webhook_url"`
 }
 
 func NewSpikeAggregationRule(name, index, queryKey string, timeframe time.Duration, spikeHeight float64, spikeType string, filter map[string]interface{}) *SpikeAggregationRule {
@@ -133,4 +135,11 @@ func (r *SpikeAggregationRule) GetIndex() string {
 }
 func (r *SpikeAggregationRule) GetType() string {
 	return r.Type
+}
+func (c *SpikeAggregationRule) GetAlertTypes() []string {
+    return c.Alert
+}
+
+func (c *SpikeAggregationRule) GetSlackWebhookURL() string {
+    return c.SlackWebhookURL
 }

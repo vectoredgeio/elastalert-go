@@ -29,6 +29,8 @@ type Rule interface {
 	GetType() string
 	GetQuery() (*opensearchapi.SearchRequest, error) 
 	Evaluate(hits []map[string]interface{}) bool
+	GetAlertTypes() []string
+    GetSlackWebhookURL() string
 }
 
 // RuleFactory holds mappings of rule types to their constructors.

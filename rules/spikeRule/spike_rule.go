@@ -18,8 +18,8 @@ type SpikeRule struct {
 	Priority              int      `yaml:"priority"`
 	Timeframe             Timeframe `yaml:"timeframe"`
 	TimestampField        string   `yaml:"timestamp_field"`
-	Alert                 []string `yaml:"alert"`
-	SlackWebhookURL       string   `yaml:"slack_webhook_url"`
+	   Alert              []string `yaml:"alert"`
+    SlackWebhookURL    string   `yaml:"slack_webhook_url"`
 	SlackChannelOverride  string   `yaml:"slack_channel_override"`
 	SlackUsernameOverride string   `yaml:"slack_username_override"`
 }
@@ -196,4 +196,11 @@ func (r *SpikeRule) GetIndex() string {
 }
 func (r *SpikeRule) GetType() string {
 	return r.Type
+}
+func (c *SpikeRule) GetAlertTypes() []string {
+    return c.Alert
+}
+
+func (c *SpikeRule) GetSlackWebhookURL() string {
+    return c.SlackWebhookURL
 }

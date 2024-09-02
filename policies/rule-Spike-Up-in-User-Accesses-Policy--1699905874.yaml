@@ -10,12 +10,12 @@ threshold_cur: 8
 
 priority: 0
 timeframe:
-  hours: 2
+  days: 6
 
 timestamp_field: timestamp
 alert:
   - slack
 
-slack_webhook_url: "https://hooks.slack.com/services/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"
+slack_webhook_url: "https://hooks.slack.com/services/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"
 slack_channel_override: "#ve-incidents"
 slack_username_override: "@ve-bot"

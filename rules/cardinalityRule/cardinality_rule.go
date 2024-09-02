@@ -21,6 +21,8 @@ type CardinalityRule struct {
 	Occurrences      map[string]int    `yaml:"-"`
 	FirstEvent       map[string]time.Time `yaml:"-"`
 	Type			string					`yaml:"type"`
+	   Alert              []string `yaml:"alert"`
+    SlackWebhookURL    string   `yaml:"slack_webhook_url"`
 }
 type Timeframe struct {
 	Minutes int `yaml:"minutes"`
@@ -99,6 +101,13 @@ func (r *CardinalityRule) GetIndex() string {
 }
 func (r *CardinalityRule) GetType() string {
 	return r.Type
+}
+func (c *CardinalityRule) GetAlertTypes() []string {
+    return c.Alert
+}
+
+func (c *CardinalityRule) GetSlackWebhookURL() string {
+    return c.SlackWebhookURL
 }
 
 // GetQuery constructs and returns the OpenSearch query for the CardinalityRule.

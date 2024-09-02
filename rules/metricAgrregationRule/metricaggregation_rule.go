@@ -24,7 +24,8 @@ type MetricAggregationRule struct {
     MetricFormatString string            `yaml:"metric_format_string"`
     QueryKey           string            `yaml:"query_key"`
     CompoundQueryKey   []string          `yaml:"compound_query_key"`
-   
+      Alert              []string `yaml:"alert"`
+    SlackWebhookURL    string   `yaml:"slack_webhook_url"`
 
     CalculationWindow  time.Duration     `yaml:"calculation_window"`
     BufferTime         time.Duration     `yaml:"buffer_time"`
@@ -279,4 +280,11 @@ func (r *MetricAggregationRule) GetIndex() string {
 }
 func (r *MetricAggregationRule) GetType() string {
 	return r.Type
+}
+func (c *MetricAggregationRule) GetAlertTypes() []string {
+    return c.Alert
+}
+
+func (c *MetricAggregationRule) GetSlackWebhookURL() string {
+    return c.SlackWebhookURL
 }

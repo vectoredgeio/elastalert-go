@@ -22,8 +22,8 @@ type FrequencyRule struct {
 	Priority              int                     `yaml:"priority"`
 	Occurrences           map[string]*EventWindow `yaml:"occurrences"`
 	Filter        []interface{}             `yaml:"filter"`
-	Alert                 []string                `yaml:"alert"`
-	SlackWebhookURL       string                  `yaml:"slack_webhook_url"`
+   Alert              []string `yaml:"alert"`
+    SlackWebhookURL    string   `yaml:"slack_webhook_url"`
 	SlackChannelOverride  string                  `yaml:"slack_channel_override"`
 	SlackUsernameOverride string                  `yaml:"slack_username_override"`
 }
@@ -262,4 +262,12 @@ func (r *FrequencyRule) GetIndex() string {
 
 func (r *FrequencyRule) GetType() string {
 	return r.Type
+}
+
+func (c *FrequencyRule) GetAlertTypes() []string {
+    return c.Alert
+}
+
+func (c *FrequencyRule) GetSlackWebhookURL() string {
+    return c.SlackWebhookURL
 }

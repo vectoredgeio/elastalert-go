@@ -21,6 +21,8 @@ type FlatlineRule struct {
 	QueryKey      string        `yaml:"query_key"`
 	ForgetKeys    bool          `yaml:"forget_keys"`
 	Index         string        `yaml:"index"`
+	   Alert              []string `yaml:"alert"`
+    SlackWebhookURL    string   `yaml:"slack_webhook_url"`
 }
 
 func NewFlatlineRule(name string, threshold int, timeframe time.Duration, useCountQuery bool, docType string, useTermsQuery bool, termsSize int, queryKey string, forgetKeys bool, index string) *FlatlineRule {
@@ -102,4 +104,11 @@ func (r *FlatlineRule) GetIndex() string {
 }
 func (r *FlatlineRule) GetType() string {
 	return r.Type
+}
+func (c *FlatlineRule) GetAlertTypes() []string {
+    return c.Alert
+}
+
+func (c *FlatlineRule) GetSlackWebhookURL() string {
+    return c.SlackWebhookURL
 }

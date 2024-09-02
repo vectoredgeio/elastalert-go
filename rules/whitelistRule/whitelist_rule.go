@@ -15,6 +15,8 @@ type WhitelistRule struct {
 	Whitelist  []string `yaml:"whitelist"`
 	IgnoreNull bool     `yaml:"ignore_null"`
 	Email      []string `yaml:"email"`
+	   Alert              []string `yaml:"alert"`
+    SlackWebhookURL    string   `yaml:"slack_webhook_url"`
 }
 
 func NewWhitelistRule(name, index, compareKey string, whitelist []string, ignoreNull bool, email []string) *WhitelistRule {
@@ -76,4 +78,11 @@ func (r *WhitelistRule) GetIndex() string {
 }
 func (r *WhitelistRule) GetType() string {
 	return r.Type
+}
+func (c *WhitelistRule) GetAlertTypes() []string {
+    return c.Alert
+}
+
+func (c *WhitelistRule) GetSlackWebhookURL() string {
+    return c.SlackWebhookURL
 }

@@ -20,8 +20,10 @@ type NewTermRule struct {
 	AlertOnMissingField bool              `yaml:"alert_on_missing_field"` // Default is false
 	UseTermsQuery       bool              `yaml:"use_terms_query"` // Default is false
 	UseKeywordPostfix   bool              `yaml:"use_keyword_postfix"` // Default is true
-	Alert               []string          `yaml:"alert"`
+	   Alert              []string `yaml:"alert"`
+    SlackWebhookURL    string   `yaml:"slack_webhook_url"`
 	Email               []string          `yaml:"email"`
+	
 }
 
 func NewNewTermRule(name, index string, fields []interface{}, queryKey string, alert, email []string) *NewTermRule {
@@ -49,6 +51,13 @@ func (r *NewTermRule) GetIndex() string {
 }
 func (r *NewTermRule) GetType() string {
 	return r.Type
+}
+func (c *NewTermRule) GetAlertTypes() []string {
+    return c.Alert
+}
+
+func (c *NewTermRule) GetSlackWebhookURL() string {
+    return c.SlackWebhookURL
 }
 
 // GetQuery constructs the query for the NewTermRule.

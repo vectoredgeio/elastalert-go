@@ -1,6 +1,7 @@
 package processor
 
 import (
+	"elastalert-go/alerts"
 	"elastalert-go/config"
 	"elastalert-go/queries"
 	"elastalert-go/rules"
@@ -28,22 +29,21 @@ func Start(cfg *config.Config) {
 	// SLICE TO STORE THE PATH OF ALL YAML FILES DEFINED IN POLICIES FOLDER
 	var ruleFiles []string
 
-	  dirEntries, err := os.ReadDir(folderPath)
-	  if err != nil {
-		  log.Fatalf("Failed to read directory: %v", err)
-	  }
-	  for _, entry := range dirEntries {
-        if entry.IsDir() {
-            continue 
-        }
+	dirEntries, err := os.ReadDir(folderPath)
+	if err != nil {
+		log.Fatalf("Failed to read directory: %v", err)
+	}
+	for _, entry := range dirEntries {
+		if entry.IsDir() {
+			continue
+		}
 
-        filePath := filepath.Join(folderPath, entry.Name())
+		filePath := filepath.Join(folderPath, entry.Name())
 
 		// STORE THE YAML FILE'S PATH IN ruleFiles SLICE
 		ruleFiles = append(ruleFiles, filePath)
 
-       
-    }
+	}
 
 	var loadedRules []rules.Rule
 
@@ -68,20 +68,20 @@ func Start(cfg *config.Config) {
 				log.Printf("Error constructing query for rule %s: %v", rule.GetName(), err)
 				continue
 			}
-		
+
 			result, err := queries.Query(client, rule.GetIndex(), query, 1000, rule)
 			if err != nil {
 				log.Printf("Error querying OpenSearch: %v", err)
 				continue
 			}
-		
+
 			hits, aggs, err := parseResult(result)
-			fmt.Println("aggs are",aggs)
+			fmt.Println("aggs are", aggs)
 			if err != nil {
 				log.Printf("Error parsing result: %v", err)
 				continue
 			}
-		
+
 			var triggered bool
 			if dualEvalRule, ok := rule.(rules.DualEvaluatable); ok {
 				fmt.Println("inside dual evaluatable")
@@ -91,27 +91,33 @@ func Start(cfg *config.Config) {
 					log.Printf("Error querying previous results for rule %s: %v", rule.GetName(), err)
 					continue
 				}
-		
+
 				previousHits, _, err := parseResult(prevResult)
 				if err != nil {
 					log.Printf("Error parsing previous result: %v", err)
 					continue
 				}
-		
+
 				triggered = dualEvalRule.EvaluateDual(hits, previousHits)
 			} else if spikeRule, ok := rule.(rules.EvaluateAggregations); ok {
-				fmt.Println("inside else if block with aggregations",aggs)
+				fmt.Println("inside else if block with aggregations", aggs)
 				triggered = spikeRule.EvaluateAggregations(aggs)
 			} else {
 				triggered = rule.Evaluate(hits)
 			}
-		
+
 			if triggered {
-				message := fmt.Sprintf("Rule %s triggered: %d events found", rule.GetName(), len(hits))
+				var count int
+				if len(hits) > 0 {
+					count = len(hits)
+				} else {
+					count = len(aggs)
+				}
+				message := fmt.Sprintf("Rule %s triggered: %d events found", rule.GetName(), count)
+
 				sendAlerts(rule, message)
 			}
 		}
-		
 
 		interval, err := time.ParseDuration(cfg.RunEvery)
 		if err != nil {
@@ -122,50 +128,48 @@ func Start(cfg *config.Config) {
 }
 
 func parseResult(result *opensearchapi.Response) ([]map[string]interface{}, map[string]interface{}, error) {
-    body, err := ioutil.ReadAll(result.Body)
-    if err != nil {
-        return nil, nil, fmt.Errorf("error reading result body: %v", err)
-    }
-
-    var searchResult map[string]interface{}
-    if err := json.Unmarshal(body, &searchResult); err != nil {
-        return nil, nil, fmt.Errorf("error unmarshalling JSON: %v", err)
-    }
-
-    hits, ok := searchResult["hits"].(map[string]interface{})["hits"].([]interface{})
-    if !ok {
-        return nil, nil, fmt.Errorf("unexpected format of hits in search result")
-    }
-
-    hitsMap := make([]map[string]interface{}, len(hits))
-    for i, hit := range hits {
-        hitsMap[i] = hit.(map[string]interface{})
-    }
-
-    fmt.Println("search results are", searchResult)
-
-    // Check if "aggregations" exists in the response
-    aggsRaw, ok := searchResult["aggregations"]
-    if !ok {
-        // Aggregations do not exist, return hits and nil for aggregations
-        fmt.Println("aggregations key does not exist in the response")
-        return hitsMap, nil, nil
-    }else{
-		fmt.Println("raw aggregations are",aggsRaw)
+	body, err := ioutil.ReadAll(result.Body)
+	if err != nil {
+		return nil, nil, fmt.Errorf("error reading result body: %v", err)
 	}
 
-    aggs, ok := aggsRaw.(map[string]interface{})
-    if !ok {
-        // Aggregations exist but are not in the expected format
-        return hitsMap, nil, fmt.Errorf("unexpected format of aggregations in search result")
-    }
+	var searchResult map[string]interface{}
+	if err := json.Unmarshal(body, &searchResult); err != nil {
+		return nil, nil, fmt.Errorf("error unmarshalling JSON: %v", err)
+	}
 
-    fmt.Println("aggregations are", aggs)
+	hits, ok := searchResult["hits"].(map[string]interface{})["hits"].([]interface{})
+	if !ok {
+		return nil, nil, fmt.Errorf("unexpected format of hits in search result")
+	}
 
-    return hitsMap, aggs, nil
+	hitsMap := make([]map[string]interface{}, len(hits))
+	for i, hit := range hits {
+		hitsMap[i] = hit.(map[string]interface{})
+	}
+
+	fmt.Println("search results are", searchResult)
+
+	// Check if "aggregations" exists in the response
+	aggsRaw, ok := searchResult["aggregations"]
+	if !ok {
+		// Aggregations do not exist, return hits and nil for aggregations
+		fmt.Println("aggregations key does not exist in the response")
+		return hitsMap, nil, nil
+	} else {
+		fmt.Println("raw aggregations are", aggsRaw)
+	}
+
+	aggs, ok := aggsRaw.(map[string]interface{})
+	if !ok {
+		// Aggregations exist but are not in the expected format
+		return hitsMap, nil, fmt.Errorf("unexpected format of aggregations in search result")
+	}
+
+	fmt.Println("aggregations are", aggs)
+
+	return hitsMap, aggs, nil
 }
-
-
 
 func buildPreviousQuery(query *opensearchapi.SearchRequest, rule rules.Rule) *opensearchapi.SearchRequest {
 	// Logic to adjust the query to fetch previous data (e.g., change date range)
@@ -187,7 +191,32 @@ func buildPreviousQuery(query *opensearchapi.SearchRequest, rule rules.Rule) *op
 }
 
 func sendAlerts(rule rules.Rule, message string) {
-	fmt.Printf("Send alert triggered by the rule %s: %s\n", rule.GetName(), message)
+	fmt.Printf("Send alert triggered by the rule %s", rule.GetName())
+	alertTypes := rule.GetAlertTypes()
+	alerting := []alerts.Alert{}
+	for _, alertType := range alertTypes {
+		switch alertType {
+		case "slack":
+			slackWebhookURL := rule.GetSlackWebhookURL()
+			if slackWebhookURL != "" {
+				slackAlert := &alerts.SlackAlert{
+					WebhookURL: slackWebhookURL,
+				}
+				alerting = append(alerting, slackAlert)
+			} else {
+				fmt.Println("Slack webhook URL not provided for rule:", rule.GetName())
+			}
+
+		// Add more cases for different alert types
+		// case "email":
+		//    sendEmailAlert(...)
+		// case "google_chat":
+		//    sendGoogleChatAlert(...)
+
+		default:
+			fmt.Printf("Unknown alert type %s for rule: %s\n", alertType, rule.GetName())
+		}
+	}
 	// Implement actual alerting logic here, e.g., sending emails or Slack messages.
 	// emailAlert := &alerts.EmailAlert{
 	// 	Recipients: rule.Email,
@@ -197,11 +226,11 @@ func sendAlerts(rule rules.Rule, message string) {
 	// 	Password:   "kiaviikrjehbawrh",
 	// }
 	// slackAlert := &alerts.SlackAlert{
-	// 	WebhookURL: "https://hooks.slack.com/services/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",
+	// 	WebhookURL: "https://hooks.slack.com/services/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",
 	// }
 	// googleChatAlert := &alerts.GoogleChatAlert{
 	// 	WebhookURL: "https://chat.googleapis.com/v1/spaces/AAAAfkA3ppk/messages?key=AIzaSyDdI0hCZtE6vySjMm-WEfRq3CPzqKqqsHI&token=pDJwD3JwznvP6v9Fi_E1H18LVN1I-MCeiWl6jaeRTOc",
 	// }
 	// alerting := []alerts.Alert{slackAlert, googleChatAlert}
-	// alerts.SendAlerts(alerting, message)
+	alerts.SendAlerts(alerting, message)
 }

@@ -18,6 +18,8 @@ type PercentageMatchRule struct {
 	MinPercentage          float64                `yaml:"min_percentage"`
 	MaxPercentage          float64                `yaml:"max_percentage"`
 	PercentageFormatString string                 `yaml:"percentage_format_string"`
+	   Alert              []string `yaml:"alert"`
+    SlackWebhookURL    string   `yaml:"slack_webhook_url"`
 }
 
 // NewPercentageMatchRule creates a new instance of PercentageMatchRule
@@ -130,4 +132,11 @@ func (r *PercentageMatchRule) GetIndex() string {
 }
 func (r *PercentageMatchRule) GetType() string {
 	return r.Type
+}
+func (c *PercentageMatchRule) GetAlertTypes() []string {
+    return c.Alert
+}
+
+func (c *PercentageMatchRule) GetSlackWebhookURL() string {
+    return c.SlackWebhookURL
 }

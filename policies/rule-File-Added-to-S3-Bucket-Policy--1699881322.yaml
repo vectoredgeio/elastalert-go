@@ -1,11 +1,11 @@
 ---
-name: File Added to S3 Bucket Policy #tested
+name: File Added to S3 Bucket Policy
 
 type: frequency
 
 index: access
 
-num_events: 1
+num_events: 5
 
 attached_related: true
 
@@ -22,6 +22,6 @@ filter:
 alert:
   - slack
 
-slack_webhook_url: "https://hooks.slack.com/services/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"
+slack_webhook_url: "https://hooks.slack.com/services/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"
 slack_channel_override: "#ve-incidents"
 slack_username_override: "@ve-bot"

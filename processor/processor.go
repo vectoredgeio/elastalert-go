@@ -78,10 +78,10 @@ func Start(cfg *config.Config) {
 
 			// hits, aggs, err := parseResult(result)
 			// fmt.Println("aggs are", aggs)
-			if err != nil {
-				log.Printf("Error parsing result: %v", err)
-				continue
-			}
+			// if err != nil {
+			// 	log.Printf("Error parsing result: %v", err)
+			// 	continue
+			// }
 
 			var triggered bool
 			if dualEvalRule, ok := rule.(rules.DualEvaluatable); ok {

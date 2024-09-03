@@ -11,19 +11,19 @@ import (
 )
 
 type CardinalityRule struct {
-	Name             string            `yaml:"name"`
-	Index            string            `yaml:"index"`
-	Timeframe        Timeframe     `yaml:"timeframe"`
-	CardinalityField string            `yaml:"cardinality_field"`
-	MaxCardinality   int               `yaml:"max_cardinality"`
-	MinCardinality   int               `yaml:"min_cardinality"`
-	QueryKey         string            `yaml:"query_key"`
-	Email            []string          `yaml:"email"`
-	Occurrences      map[string]int    `yaml:"-"`
+	Name             string               `yaml:"name"`
+	Index            string               `yaml:"index"`
+	Timeframe        Timeframe            `yaml:"timeframe"`
+	CardinalityField string               `yaml:"cardinality_field"`
+	MaxCardinality   int                  `yaml:"max_cardinality"`
+	MinCardinality   int                  `yaml:"min_cardinality"`
+	QueryKey         string               `yaml:"query_key"`
+	Email            []string             `yaml:"email"`
+	Occurrences      map[string]int       `yaml:"-"`
 	FirstEvent       map[string]time.Time `yaml:"-"`
-	Type			string					`yaml:"type"`
-	   Alert              []string `yaml:"alert"`
-    SlackWebhookURL    string   `yaml:"slack_webhook_url"`
+	Type             string               `yaml:"type"`
+	Alert            []string             `yaml:"alert"`
+	SlackWebhookURL  string               `yaml:"slack_webhook_url"`
 }
 type Timeframe struct {
 	Minutes int `yaml:"minutes"`
@@ -36,7 +36,6 @@ func (tf Timeframe) ToDuration() time.Duration {
 		time.Duration(tf.Hours)*time.Hour +
 		time.Duration(tf.Days)*time.Hour*24
 }
-
 
 func NewCardinalityRule(name, index, cardinalityField string, timeframe Timeframe, maxCardinality, minCardinality int, queryKey string, email []string) *CardinalityRule {
 	return &CardinalityRule{
@@ -52,8 +51,6 @@ func NewCardinalityRule(name, index, cardinalityField string, timeframe Timefram
 		FirstEvent:       make(map[string]time.Time),
 	}
 }
-
-
 
 func (r *CardinalityRule) GarbageCollect(ts time.Time) {
 	for key, eventTime := range r.FirstEvent {
@@ -82,7 +79,7 @@ func (r *CardinalityRule) calculateCardinality(hits []map[string]interface{}) in
 			fmt.Println("_source not found")
 			continue
 		}
-		
+
 		if value, ok := source[r.CardinalityField].(string); ok {
 			fmt.Println("accessing username")
 			uniqueValues[value] = struct{}{}
@@ -91,7 +88,6 @@ func (r *CardinalityRule) calculateCardinality(hits []map[string]interface{}) in
 
 	return len(uniqueValues)
 }
-
 
 func (r *CardinalityRule) GetName() string {
 	return r.Name
@@ -104,23 +100,23 @@ func (r *CardinalityRule) GetType() string {
 	return r.Type
 }
 func (c *CardinalityRule) GetAlertTypes() []string {
-    return c.Alert
+	return c.Alert
 }
 
 func (c *CardinalityRule) GetSlackWebhookURL() string {
-    return c.SlackWebhookURL
+	return c.SlackWebhookURL
 }
 
 // GetQuery constructs and returns the OpenSearch query for the CardinalityRule.
 func (r *CardinalityRule) GetQuery() (*opensearchapi.SearchRequest, error) {
 	timeframe := ""
-    if r.Timeframe.Minutes > 0 {
-        timeframe = fmt.Sprintf("now-%dm", r.Timeframe.Minutes)
-    } else if r.Timeframe.Hours > 0 {
-        timeframe = fmt.Sprintf("now-%dh", r.Timeframe.Hours)
-    } else if r.Timeframe.Days > 0 {
-        timeframe = fmt.Sprintf("now-%dd", r.Timeframe.Days)
-    }
+	if r.Timeframe.Minutes > 0 {
+		timeframe = fmt.Sprintf("now-%dm", r.Timeframe.Minutes)
+	} else if r.Timeframe.Hours > 0 {
+		timeframe = fmt.Sprintf("now-%dh", r.Timeframe.Hours)
+	} else if r.Timeframe.Days > 0 {
+		timeframe = fmt.Sprintf("now-%dd", r.Timeframe.Days)
+	}
 	query := map[string]interface{}{
 		"query": map[string]interface{}{
 			"bool": map[string]interface{}{
@@ -138,7 +134,7 @@ func (r *CardinalityRule) GetQuery() (*opensearchapi.SearchRequest, error) {
 		"aggs": map[string]interface{}{
 			"cardinality_count": map[string]interface{}{
 				"cardinality": map[string]interface{}{
-					"field": r.CardinalityField+".keyword",
+					"field": r.CardinalityField + ".keyword",
 				},
 			},
 		},
@@ -155,18 +151,17 @@ func (r *CardinalityRule) GetQuery() (*opensearchapi.SearchRequest, error) {
 	}, nil
 }
 
-
-
 func (r *CardinalityRule) Evaluate(response *opensearchapi.Response) bool {
-	hits,_:=util.GetHitsFromResponse(response)
-	cardinality := r.calculateCardinality(hits)
+	// hits,_:=util.GetHitsFromResponse(response)
+	aggregations, err := util.GetAggregationsFromResponse(response)
+	if err != nil {
+		fmt.Println("Error retrieving aggregations:", err)
+		return false
+	}
 
-	fmt.Printf("Calculated Cardinality: %d\n", cardinality)
-	fmt.Printf("Max Cardinality: %d\n", r.MaxCardinality)
-	fmt.Printf("Min Cardinality: %d\n", r.MinCardinality)
-
+	cardinality, err := GetCardinalityValue(aggregations)
 	if r.MaxCardinality > 0 {
-		if cardinality > r.MaxCardinality {
+		if cardinality >r.MaxCardinality {
 			fmt.Println("Cardinality exceeds MaxCardinality, returning true")
 			return true
 		}
@@ -177,7 +172,23 @@ func (r *CardinalityRule) Evaluate(response *opensearchapi.Response) bool {
 		}
 	}
 
-	fmt.Println("Cardinality does not meet criteria, returning false")
+	fmt.Println("cardinality value is", cardinality)
 	return false
 }
 
+func GetCardinalityValue(aggregations map[string]interface{}) (int, error) {
+	// Access the 'cardinality_count' map
+	cardinalityMap, ok := aggregations["cardinality_count"].(map[string]interface{})
+	if !ok {
+		return 0, fmt.Errorf("cardinality_count not found or not of expected type")
+	}
+
+	// Access the 'value' field within the 'cardinality_count' map
+	value, ok := cardinalityMap["value"].(float64) // OpenSearch typically returns numbers as float64
+	if !ok {
+		return 0, fmt.Errorf("value field not found or not of expected type")
+	}
+
+	// Convert float64 to int
+	return int(value), nil
+}

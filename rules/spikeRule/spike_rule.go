@@ -103,7 +103,7 @@ func (rule *SpikeRule) GetQuery() (*opensearchapi.SearchRequest, error) {
 		return nil, err
 	}
 
-	fmt.Printf("Generated Query: %s\n", string(queryBytes))
+	// fmt.Printf("Generated Query: %s\n", string(queryBytes))
 	return &opensearchapi.SearchRequest{
 		Index: []string{rule.Index},
 		Body:  strings.NewReader(string(queryBytes)),

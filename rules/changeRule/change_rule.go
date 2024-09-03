@@ -59,7 +59,6 @@ func NewChangeRule(name, index, queryKey string, compareKey string, ignoreNull b
 	}
 }
 func (rule *ChangeRule) Matches(event map[string]interface{}) bool {
-	fmt.Println("Inside Matches function with event", event)
 
 	if rule.Occurrences == nil {
 		rule.Occurrences = make(map[string][]interface{})
@@ -190,7 +189,7 @@ func (r *ChangeRule) GetQuery() (*opensearchapi.SearchRequest, error) {
 		return nil, err
 	}
 
-	fmt.Println("Constructed query:", string(queryBytes))
+	// fmt.Println("Constructed query:", string(queryBytes))
 	return &opensearchapi.SearchRequest{
 		Index: []string{r.Index},
 		Body:  strings.NewReader(string(queryBytes)),

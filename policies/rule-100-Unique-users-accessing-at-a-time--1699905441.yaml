@@ -1,20 +1,20 @@
 ---
-name: 100 Unique users accessing at a time #tested
+name: 100 Unique users accessing at a time
 
 type: cardinality
 
 index: access
 cardinality_field: user_name
-max_cardinality: 1
+max_cardinality: 100
 
 priority: 0
 timeframe:
-  days: 10
+  hours: 1
 
 timestamp_field: timestamp
 alert:
   - slack
 
-slack_webhook_url: "https://hooks.slack.com/services/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"
+slack_webhook_url: "https://hooks.slack.com/services/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"
 slack_channel_override: "#ve-incidents"
 slack_username_override: "@ve-bot"

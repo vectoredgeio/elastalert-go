@@ -1,27 +1,49 @@
----
-name: New Mail with Sensitive Information #tested
+  ---
 
-type: frequency
 
-index: access
 
-num_events: 1
+  name: New Mail with Sensitive Information
 
-attached_related: true
+  type: frequency
 
-priority: 0
-timeframe:
-  hours: 1
+  index:  access
 
-timestamp_field: timestamp
-filter:
+  num_events: 1
+
+  attached_related: true
+
+
+
+
+
+  priority: 0
+  timeframe:
+    hours: 1
+    
+  timestamp_field: timestamp
+  filter:
   - query:
       match:
-        file_name:
-          query: "customer-email-help-mercury"
-alert:
-  - slack
+        file_name: 
+          query: "customer-email-help-mercury" 
+  alert:
+    - slack
 
-slack_webhook_url: "https://hooks.slack.com/services/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"
-slack_channel_override: "#ve-incidents"
-slack_username_override: "@ve-bot"
+
+  slack_webhook_url:  "https://hooks.slack.com/services/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"
+  slack_channel_override:  "#ve-incidents"
+  slack_username_override: "@ve-bot"
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,5 +1,8 @@
 es_host: "100.94.129.57"
 es_port: 9200
+kg_host: 0.0.0.0
+kg_port: 8083
+tenant_id: 1001
 run_every: "10m"
 buffer_time: "15m"
 writeback_index: "elastalert_status"

@@ -64,6 +64,8 @@ func Start(cfg *config.Config) {
 		for _, rule := range loadedRules {
 			fmt.Printf("Processing rule: %s (type: %T)\n", rule.GetName(), rule)
 
+			results,err:=queries.GetDetections(cfg.TenantHost, cfg.TenantPort, cfg.TenantID,"10m")
+			fmt.Println("results of get detections are",results)
 			query, err := rule.GetQuery()
 			if err != nil {
 				log.Printf("Error constructing query for rule %s: %v", rule.GetName(), err)

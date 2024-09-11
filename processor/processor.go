@@ -3,6 +3,7 @@ package processor
 import (
 	"elastalert-go/alerts"
 	"elastalert-go/config"
+	"elastalert-go/controllers"
 	"elastalert-go/queries"
 	"elastalert-go/rules"
 	"elastalert-go/util"
@@ -20,6 +21,7 @@ import (
 
 func Start(cfg *config.Config) {
 	client, err := queries.NewClient(cfg.EsHost, cfg.EsPort, cfg.Username, cfg.Password)
+	
 	if err != nil {
 		log.Fatalf("Error creating OpenSearch client: %v", err)
 	}
@@ -61,11 +63,16 @@ func Start(cfg *config.Config) {
 
 	// Main loop
 	for {
+		results,err:=queries.GetDetections(cfg.TenantHost, cfg.TenantPort, cfg.TenantID,"10m")
+			if err!=nil{
+				log.Printf("Error getting detections results %v",err)
+			}
+		controllers.ProcessDetections(results)
+		
 		for _, rule := range loadedRules {
 			fmt.Printf("Processing rule: %s (type: %T)\n", rule.GetName(), rule)
 
-			results,err:=queries.GetDetections(cfg.TenantHost, cfg.TenantPort, cfg.TenantID,"10m")
-			fmt.Println("results of get detections are",results)
+			
 			query, err := rule.GetQuery()
 			if err != nil {
 				log.Printf("Error constructing query for rule %s: %v", rule.GetName(), err)

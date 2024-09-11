@@ -1,29 +1,25 @@
 package queries
 
 import (
-	// "context"
 	"crypto/tls"
+	"elastalert-go/models"
 	"encoding/json"
 	"fmt"
-	"net/http"
-	// "os"
-	"time"
 	"io/ioutil"
+	"net/http"
+	"time"
 )
 
-// Struct to hold the API response data
-type DetectionResponse struct {
-	// Define fields based on the response structure
-	Data []map[string]interface{} `json:"data"`
-	// Other fields can be added as needed
+type APIResponse struct {
+	Code   int              `json:"Code"`
+	Status bool             `json:"status"`
+	Data   []models.Detection `json:"data"`  
 }
 
-// Function to create and send an API request to the tenant detections API
-func GetDetections(tenantHost string, tenantPort int, tenantID int, duration string) (*DetectionResponse, error) {
-	// Build the URL for the API request
+func GetDetections(tenantHost string, tenantPort int, tenantID int, duration string) ([]models.Detection, error) {
+	fmt.Println("get detections called")
 	url := fmt.Sprintf("http://%s:%d/tenant/%d/detections", tenantHost, tenantPort, tenantID)
 
-	// Create a new HTTP client with timeout and TLS config if needed
 	client := &http.Client{
 		Timeout: 30 * time.Second,
 		Transport: &http.Transport{
@@ -31,7 +27,6 @@ func GetDetections(tenantHost string, tenantPort int, tenantID int, duration str
 		},
 	}
 
-	// Make the GET request
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %v", err)
@@ -43,18 +38,18 @@ func GetDetections(tenantHost string, tenantPort int, tenantID int, duration str
 	}
 	defer resp.Body.Close()
 
-	// Read the response body
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read response body: %v", err)
 	}
 
-	// Parse the JSON response
-	var detectionResponse DetectionResponse
-	err = json.Unmarshal(body, &detectionResponse)
+	// fmt.Println("body is",string(body.Data))
+	var apiResponse APIResponse
+	err = json.Unmarshal(body, &apiResponse)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse response: %v", err)
 	}
 
-	return &detectionResponse, nil
+	fmt.Println("api response is",apiResponse)
+	return apiResponse.Data, nil
 }

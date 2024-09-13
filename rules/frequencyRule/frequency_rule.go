@@ -222,7 +222,7 @@ func (rule *FrequencyRule) GetQuery() (*opensearchapi.SearchRequest, error) {
     }
 
     // Create and return the OpenSearch search request
-	fmt.Printf("Generated Query: %s\n", string(queryBytes))
+	// fmt.Printf("Generated Query: %s\n", string(queryBytes))
     return &opensearchapi.SearchRequest{
         Index: []string{rule.Index},
         Body:  strings.NewReader(string(queryBytes)),

@@ -1,0 +1,24 @@
+---
+name: Unsual Geographic Location
+
+type: change
+
+index: ve-access-1
+
+compare_key: remote_ip
+
+query_key: user_name
+
+ignore_null: false
+
+priority: 0
+timeframe:
+  days: 1
+
+timestamp_field: timestamp
+alert:
+  - slack
+
+slack_webhook_url: "https://hooks.slack.com/services/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"
+slack_channel_override: "#ve-incidents"
+slack_username_override: "@ve-bot"

@@ -1,0 +1,37 @@
+name: File Opened At Unusual Time
+
+type: frequency
+
+index: ve-access-1
+
+num_events: 1  # Set based on how many events you consider unusual
+
+priority: 2  # Adjust priority as needed
+
+timeframe:
+  hours: 24
+
+timestamp_field: timestamp
+
+filter:
+  - query:
+      bool:
+        must:
+          - match:
+              event_name:
+                query: "NotifyFileWasRead"
+          - bool:
+              should:
+                - range:
+                    timestamp:
+                      lt: "2024-09-12T09:00:00Z"  # Before 9 AM
+                - range:
+                    timestamp:
+                      gt: "2024-09-12T17:00:00Z"  # After 5 PM
+
+alert:
+  - slack
+
+slack_webhook_url: "https://hooks.slack.com/services/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"
+slack_channel_override: "#ve-incidents"
+slack_username_override: "@ve-bot"

@@ -5,25 +5,25 @@ import (
 	"fmt"
 	"strings"
 	"time"
-    
+
+	util "elastalert-go/util"
 
 	"github.com/opensearch-project/opensearch-go/opensearchapi"
-    util "elastalert-go/util"
 )
 
 type FrequencyRule struct {
 	Name                  string                  `yaml:"name"`
 	Index                 string                  `yaml:"index"`
-    Type  				string       			`yaml:"type"`
+	Type                  string                  `yaml:"type"`
 	NumEvents             int                     `yaml:"num_events"`
 	Timeframe             Timeframe               `yaml:"timeframe"`
 	TimestampField        string                  `yaml:"timestamp_field"`
 	AttachRelated         bool                    `yaml:"attached_related"`
 	Priority              int                     `yaml:"priority"`
 	Occurrences           map[string]*EventWindow `yaml:"occurrences"`
-	Filter        []interface{}             `yaml:"filter"`
-   Alert              []string `yaml:"alert"`
-    SlackWebhookURL    string   `yaml:"slack_webhook_url"`
+	Filter                []interface{}           `yaml:"filter"`
+	Alert                 []string                `yaml:"alert"`
+	SlackWebhookURL       string                  `yaml:"slack_webhook_url"`
 	SlackChannelOverride  string                  `yaml:"slack_channel_override"`
 	SlackUsernameOverride string                  `yaml:"slack_username_override"`
 }
@@ -39,7 +39,6 @@ func (tf Timeframe) ToDuration() time.Duration {
 		time.Duration(tf.Hours)*time.Hour +
 		time.Duration(tf.Days)*time.Hour*24
 }
-
 
 type EventWindow struct {
 	Data      []Event
@@ -98,9 +97,6 @@ func (rule *FrequencyRule) AddCountData(data map[time.Time]int) {
 	}
 }
 
-
-
-
 func NewEventWindow(timeframe time.Duration) *EventWindow {
 	return &EventWindow{
 		Data:      make([]Event, 0),
@@ -110,50 +106,49 @@ func NewEventWindow(timeframe time.Duration) *EventWindow {
 }
 
 func (ew *EventWindow) Append(event Event) {
-    if ew == nil {
-        fmt.Println("EventWindow is nil")
-        return
-    }
-    ew.Data = append(ew.Data, event)
+	if ew == nil {
+		fmt.Println("EventWindow is nil")
+		return
+	}
+	ew.Data = append(ew.Data, event)
 }
 
 func (ew *EventWindow) Count() int {
-    if ew == nil || ew.Data == nil {
-        return 0
-    }
-    return len(ew.Data)
+	if ew == nil || ew.Data == nil {
+		return 0
+	}
+	return len(ew.Data)
 }
 
 func (rule *FrequencyRule) Matches(key string) bool {
-    if rule == nil || rule.Occurrences == nil {
-        fmt.Println("FrequencyRule or Occurrences map is nil")
-        return false
-    }
+	if rule == nil || rule.Occurrences == nil {
+		fmt.Println("FrequencyRule or Occurrences map is nil")
+		return false
+	}
 
-    window, ok := rule.Occurrences[key]
-    if !ok || window == nil {
-        fmt.Printf("Window for key %s is nil\n", key)
-        return false
-    }
+	window, ok := rule.Occurrences[key]
+	if !ok || window == nil {
+		fmt.Printf("Window for key %s is nil\n", key)
+		return false
+	}
 
-    if window.Count() >= rule.NumEvents {
-        lastEvent := window.Data[len(window.Data)-1]
-        if rule.AttachRelated {
-            relatedEvents := make([]Event, len(window.Data)-1)
-            copy(relatedEvents, window.Data[:len(window.Data)-1])
-            lastEvent.RelatedEvents = relatedEvents
-        }
+	if window.Count() >= rule.NumEvents {
+		lastEvent := window.Data[len(window.Data)-1]
+		if rule.AttachRelated {
+			relatedEvents := make([]Event, len(window.Data)-1)
+			copy(relatedEvents, window.Data[:len(window.Data)-1])
+			lastEvent.RelatedEvents = relatedEvents
+		}
 
-        fmt.Printf("Match found! %+v\n", lastEvent)
+		fmt.Printf("Match found! %+v\n", lastEvent)
 
-        window.Clear()
+		window.Clear()
 
-        return true
-    }
+		return true
+	}
 
-    return false
+	return false
 }
-
 
 // Clear removes all events from the event window
 func (ew *EventWindow) Clear() {
@@ -161,81 +156,76 @@ func (ew *EventWindow) Clear() {
 }
 
 func (rule *FrequencyRule) GetQuery() (*opensearchapi.SearchRequest, error) {
-    // Initialize an empty slice for filters
-    var filters []interface{}
+	// Initialize an empty slice for filters
+	var filters []interface{}
 	timeframe := ""
-    if rule.Timeframe.Minutes > 0 {
-        timeframe = fmt.Sprintf("now-%dm", rule.Timeframe.Minutes)
-    } else if rule.Timeframe.Hours > 0 {
-        timeframe = fmt.Sprintf("now-%dh", rule.Timeframe.Hours)
-    } else if rule.Timeframe.Days > 0 {
-        timeframe = fmt.Sprintf("now-%dd", rule.Timeframe.Days)
-    }
-    // Loop over each filter item from the rule's filter configuration
-    for _, f := range rule.Filter {
-        if f == nil {
-            return nil, fmt.Errorf("filter element is nil")
-        }
+	if rule.Timeframe.Minutes > 0 {
+		timeframe = fmt.Sprintf("now-%dm", rule.Timeframe.Minutes)
+	} else if rule.Timeframe.Hours > 0 {
+		timeframe = fmt.Sprintf("now-%dh", rule.Timeframe.Hours)
+	} else if rule.Timeframe.Days > 0 {
+		timeframe = fmt.Sprintf("now-%dd", rule.Timeframe.Days)
+	}
+	// Loop over each filter item from the rule's filter configuration
+	for _, f := range rule.Filter {
+		if f == nil {
+			return nil, fmt.Errorf("filter element is nil")
+		}
 
-        var queryPart map[string]interface{}
-        switch v := f.(type) {
-        case map[interface{}]interface{}:
-            // Convert to map[string]interface{}
-            queryPart = util.ConvertMapKeys(v)
-        case map[string]interface{}:
-            // Already the correct type
-            queryPart = v
-        default:
-            return nil, fmt.Errorf("unsupported filter type: %T", f)
-        }
+		var queryPart map[string]interface{}
+		switch v := f.(type) {
+		case map[interface{}]interface{}:
+			// Convert to map[string]interface{}
+			queryPart = util.ConvertMapKeys(v)
+		case map[string]interface{}:
+			// Already the correct type
+			queryPart = v
+		default:
+			return nil, fmt.Errorf("unsupported filter type: %T", f)
+		}
 
-        // Validate the structure of the queryPart to ensure it matches OpenSearch's expected format
-        if _, ok := queryPart["query"]; ok {
-            filters = append(filters, queryPart["query"])
-        } else {
-            return nil, fmt.Errorf("invalid filter format: expected 'query' key, got %v", queryPart)
-        }
-    }
+		// Validate the structure of the queryPart to ensure it matches OpenSearch's expected format
+		if _, ok := queryPart["query"]; ok {
+			filters = append(filters, queryPart["query"])
+		} else {
+			return nil, fmt.Errorf("invalid filter format: expected 'query' key, got %v", queryPart)
+		}
+	}
 
-    // Construct the dynamic query with filters
-    query := map[string]interface{}{
-        "query": map[string]interface{}{
-            "bool": map[string]interface{}{
-                "filter": filters, // Use the dynamically created filters
+	// Construct the dynamic query with filters
+	query := map[string]interface{}{
+		"query": map[string]interface{}{
+			"bool": map[string]interface{}{
+				"filter": filters, // Use the dynamically created filters
 				"must": []interface{}{
-                    map[string]interface{}{
-                        "range": map[string]interface{}{
-                            rule.TimestampField: map[string]interface{}{
-                                "gte": timeframe,
-                            },
-                        },
-                    },
-                },
-            },
-        },
-    }
+					map[string]interface{}{
+						"range": map[string]interface{}{
+							rule.TimestampField: map[string]interface{}{
+								"gte": timeframe,
+							},
+						},
+					},
+				},
+			},
+		},
+	}
 
-    // Serialize the query to JSON
-    queryBytes, err := json.Marshal(query)
-    if err != nil {
-        return &opensearchapi.SearchRequest{}, err
-    }
+	// Serialize the query to JSON
+	queryBytes, err := json.Marshal(query)
+	if err != nil {
+		return &opensearchapi.SearchRequest{}, err
+	}
 
-    // Create and return the OpenSearch search request
+	// Create and return the OpenSearch search request
 	fmt.Printf("Generated Query: %s\n", string(queryBytes))
-    return &opensearchapi.SearchRequest{
-        Index: []string{rule.Index},
-        Body:  strings.NewReader(string(queryBytes)),
-    }, nil
+	return &opensearchapi.SearchRequest{
+		Index: []string{rule.Index},
+		Body:  strings.NewReader(string(queryBytes)),
+	}, nil
 }
 
-
-
-
-
-
 func (r *FrequencyRule) Evaluate(response *opensearchapi.Response) bool {
-    hits,_:=util.GetHitsFromResponse(response)
+	hits, _ := util.GetHitsFromResponse(response)
 	if hits == nil {
 		fmt.Println("No hits found in the response")
 		return false
@@ -243,15 +233,6 @@ func (r *FrequencyRule) Evaluate(response *opensearchapi.Response) bool {
 	fmt.Println("length of hits", len(hits))
 	return len(hits) >= r.NumEvents
 }
-
-
-
-
-
-
-
-
-
 
 func (r *FrequencyRule) GetName() string {
 	return r.Name
@@ -266,9 +247,9 @@ func (r *FrequencyRule) GetType() string {
 }
 
 func (c *FrequencyRule) GetAlertTypes() []string {
-    return c.Alert
+	return c.Alert
 }
 
 func (c *FrequencyRule) GetSlackWebhookURL() string {
-    return c.SlackWebhookURL
+	return c.SlackWebhookURL
 }

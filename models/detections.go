@@ -17,6 +17,25 @@ type Detection struct {
 	DetectionQueryString   string          `json:"detection_query_string"`
 }
 
+type DetectionScore struct{
+	ID                     int             `json:"ID"`
+	TenantID               int             `json:"tenant_id"`
+	CampaignID             int             `json:"campaign_id"`
+	DetectionName          string          `json:"detection_name"`
+	Service                string          `json:"service"`
+	DetectionAccessibility string          `json:"detection_accessibility"`
+	QueryString            json.RawMessage `json:"query_string"` 
+	AlgorithmType          string          `json:"algorithm_type"`
+	DetectionQueryString   string          `json:"detection_query_string"`
+	AES 					int 			`json:"aes"`
+}
+type AESResponse struct {
+	Status  bool        `json:"status"`
+	Data    int         `json:"data"` // Assuming AES score is an integer
+	Message string      `json:"message"`
+	Error   []string    `json:"error"`
+}
+
 type QueryString struct {
 	NodeSelection      NodeSelection       `json:"node_selection"`
 	EdgeSelectionSteps []EdgeSelectionStep `json:"edge_selection_steps"`
@@ -36,4 +55,20 @@ type Condition struct {
 	Property string `json:"property"`
 	Operator string `json:"operator"`
 	Value    string `json:"value"`
+}
+
+
+func (detection Detection) TransformIntoDetectionScore(calcDetection Detection,aes int) DetectionScore{
+	return DetectionScore {
+		ID:                     detection.ID,
+		TenantID:               detection.TenantID,
+		CampaignID:             detection.CampaignID,
+		DetectionName:          detection.DetectionName,
+		Service:                detection.Service,
+		DetectionAccessibility: detection.DetectionAccessibility,
+		QueryString:            detection.QueryString,
+		AlgorithmType:          detection.AlgorithmType,
+		DetectionQueryString:   detection.DetectionQueryString,
+		AES:					aes,
+	}
 }

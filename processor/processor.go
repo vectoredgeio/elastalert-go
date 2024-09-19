@@ -3,7 +3,7 @@ package processor
 import (
 	"elastalert-go/alerts"
 	"elastalert-go/config"
-	"elastalert-go/controllers"
+	// "elastalert-go/controllers"
 	"elastalert-go/queries"
 	"elastalert-go/rules"
 	"elastalert-go/util"
@@ -63,11 +63,11 @@ func Start(cfg *config.Config) {
 
 	// Main loop
 	for {
-		results,err:=queries.GetDetections(cfg.TenantHost, cfg.TenantPort, cfg.TenantID,"10m")
-			if err!=nil{
-				log.Printf("Error getting detections results %v",err)
-			}
-		controllers.ProcessDetections(results)
+		// results,err:=queries.GetDetections(cfg.TenantHost, cfg.TenantPort, cfg.TenantID,"10m")
+		// 	if err!=nil{
+		// 		log.Printf("Error getting detections results %v",err)
+		// 	}
+		// controllers.ProcessDetections(results)
 		
 		for _, rule := range loadedRules {
 			fmt.Printf("Processing rule: %s (type: %T)\n", rule.GetName(), rule)

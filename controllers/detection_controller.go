@@ -13,14 +13,12 @@ func ProcessDetections(detections []models.Detection) {
 	for _, detection := range detections {
 		fmt.Printf("Processing detection: %s\n", detection.DetectionName)
 
-		// Call the methods for each detection
-		GetAES(detection)
-		GetCES(detection)
+		CalculateAES(detection)
 	}
 	
 }
 
-func GetAES(detection models.Detection) {
+func CalculateAES(detection models.Detection) {
 	detectionJSON, err := json.Marshal(detection)
 	if err != nil {
 		fmt.Printf("Error marshaling detection data: %v\n", err)
@@ -73,12 +71,56 @@ func GetAES(detection models.Detection) {
 	// var detectionScore models.DetectionScore
 
 	detectionScore:=detection.TransformIntoDetectionScore(detection,aesScore)
-	fmt.Println("detection score is",detectionScore)
-	fmt.Printf("Successfully sent detection %s to AES calculation\n", detection.DetectionName)
+	err = SendDetectionScore(detection.TenantID, detectionScore)
+	if err != nil {
+		fmt.Printf("Error sending detection score: %v\n", err)
+		return
+	}
+
+	fmt.Printf("Successfully sent detection %s to AES calculation and score endpoint\n", detection.DetectionName)
+	
 }
 
 
-func GetCES(detection models.Detection) {
-	// Implement CES logic here
-	fmt.Printf("Running GetCES for detection %s\n", detection.DetectionName)
+func SendDetectionScore(tenantID int, detectionScore models.DetectionScore) error {
+	// Marshal detectionScore into JSON
+
+	fmt.Println("detection score query string",detectionScore.QueryString)
+	detectionScoreJSON, err := json.Marshal(detectionScore)
+	if err != nil {
+		return fmt.Errorf("Error marshaling detectionScore: %v", err)
+	}
+
+	fmt.Println("detection score json is",detectionScoreJSON)
+	url := fmt.Sprintf("http://18.118.97.249:8083/tenant/%d/detections/score", tenantID) 
+
+	// Create a new POST request
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer(detectionScoreJSON))
+	if err != nil {
+		return fmt.Errorf("Error creating POST request for detectionScore: %v", err)
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+
+	// Send the POST request
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return fmt.Errorf("Error sending POST request: %v", err)
+	}
+	defer resp.Body.Close()
+
+	// Check if the request was successful
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("Unexpected response code when sending detection score: %d", resp.StatusCode)
+	}
+
+	// Optionally, read and log the response body
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return fmt.Errorf("Error reading response body: %v", err)
+	}
+	fmt.Printf("Response from tenant score API: %s\n", string(body))
+
+	return nil
 }
